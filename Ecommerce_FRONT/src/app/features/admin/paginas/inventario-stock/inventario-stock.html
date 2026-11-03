@@ -1,0 +1,62 @@
+<header class="encabezado">
+  <div>
+    <h1>Inventario</h1>
+    <span class="texto-suave">Disponible = físico − reservado por pedidos pendientes de pago.</span>
+  </div>
+</header>
+
+<div class="vistas" role="tablist" aria-label="Vista del inventario">
+  <button *ngFor="let v of vistas" type="button" role="tab" class="vista" [class.activa]="vista === v.valor" [ngClass]="v.valor"
+          [attr.aria-selected]="vista === v.valor" (click)="cambiarVista(v.valor)">
+    <i class="bi" [ngClass]="v.icono"></i>
+    <span>{{ v.texto }}</span>
+    <strong class="total">{{ totales[v.valor] ?? '…' }}</strong>
+  </button>
+</div>
+
+<div class="filtros superficie">
+  <form class="buscar" role="search" (submit)="$event.preventDefault(); buscarSku(campoSku.value)">
+    <i class="bi bi-upc-scan"></i>
+    <input #campoSku class="form-control" [value]="sku" placeholder="SKU o inicio del SKU, p. ej. P00002" aria-label="Buscar por SKU">
+  </form>
+  <button class="btn btn-link" type="button" *ngIf="sku" (click)="buscarSku('')">Limpiar</button>
+</div>
+
+<div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+<div class="superficie tabla">
+  <table class="table align-middle mb-0">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th class="text-end">Físico</th>
+        <th class="text-end">Reservado</th>
+        <th class="text-end">Disponible</th>
+        <th class="text-end">Mínimo</th>
+        <th>Actualizado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="cargando">
+        <tr *ngFor="let i of [1, 2, 3, 4, 5]"><td colspan="7"><div class="esqueleto"></div></td></tr>
+      </ng-container>
+      <ng-container *ngIf="!cargando && resultado">
+        <tr *ngFor="let s of resultado.items" class="fila">
+          <td><app-producto-sku [sku]="s.sku" [variante]="variantes.get(s.sku)"></app-producto-sku></td>
+          <td class="text-end">{{ s.cantidadFisica }}</td>
+          <td class="text-end texto-suave">{{ s.cantidadReservada }}</td>
+          <td class="text-end"><span class="disponible" [ngClass]="estado(s).clase" [title]="estado(s).texto">{{ s.cantidadDisponible }}</span></td>
+          <td class="text-end texto-suave">{{ s.stockMinimo }}</td>
+          <td class="texto-suave">{{ fecha(s.updatedAt) | date: 'd MMM, h:mm a' }}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" [routerLink]="['/admin/inventario', s.sku]">Gestionar</a></td>
+        </tr>
+        <tr *ngIf="resultado.items.length === 0">
+          <td colspan="7" class="vacio">{{ sku ? 'Ningún SKU empieza por "' + sku + '".' : 'No hay SKU en esta vista.' }}</td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>
+
+<app-paginador *ngIf="resultado" [pagina]="resultado.pagina" [totalPaginas]="resultado.totalPaginas" (cambiar)="irAPagina($event)"></app-paginador>

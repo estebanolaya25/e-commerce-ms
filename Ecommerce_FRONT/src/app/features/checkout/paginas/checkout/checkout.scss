@@ -1,0 +1,160 @@
+@use 'tema' as *;
+
+.checkout {
+  padding-top: 2rem;
+}
+
+.contenido {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+
+  @include desde(lg) {
+    grid-template-columns: 1fr 23rem;
+  }
+}
+
+.formulario {
+  padding: 2rem;
+
+  h1 {
+    margin-bottom: 0.25rem;
+    font-size: 1.6rem;
+  }
+
+  > .texto-suave {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.resumen {
+  padding: 1.5rem;
+
+  @include desde(lg) {
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  h2 {
+    margin-bottom: 1.25rem;
+    font-size: 1.15rem;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid $borde;
+  }
+
+  dt {
+    color: $texto-suave;
+    font-weight: 400;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .total {
+    padding-top: 0.6rem;
+    border-top: 1px solid $borde;
+    color: $texto;
+    font-size: 1.15rem;
+    font-weight: 800;
+  }
+
+  .nota {
+    margin: 1.25rem 0 0;
+    color: $texto-suave;
+    font-size: 0.8rem;
+  }
+}
+
+.items {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  small {
+    display: block;
+    color: $texto-suave;
+  }
+}
+
+.miniatura {
+  position: relative;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: $radio-sm;
+  background: $fondo;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+  }
+
+  .cantidad {
+    position: absolute;
+    top: -0.4rem;
+    right: -0.4rem;
+    display: grid;
+    place-items: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3rem;
+    border-radius: $radio-pildora;
+    background: $texto-suave;
+    color: $superficie;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+}
+
+.esqueleto {
+  height: 18rem;
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+
+  &.alto {
+    height: 28rem;
+  }
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

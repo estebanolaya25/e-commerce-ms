@@ -1,0 +1,88 @@
+@use 'tema' as *;
+@use 'admin' as *;
+
+.encabezado {
+  @include encabezado-admin;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+
+  .form-select {
+    width: auto;
+    min-width: 11rem;
+    max-width: 100%;
+  }
+}
+
+.buscar {
+  position: relative;
+  flex: 1;
+  min-width: 14rem;
+
+  i {
+    position: absolute;
+    top: 50%;
+    left: 0.85rem;
+    transform: translateY(-50%);
+    color: $texto-tenue;
+  }
+
+  .form-control {
+    padding-left: 2.4rem;
+  }
+}
+
+.tabla {
+  @include tabla-admin;
+}
+
+.producto {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+
+  img,
+  .sin-imagen {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: $radio-sm;
+    object-fit: cover;
+    background: $fondo;
+  }
+
+  .sin-imagen {
+    display: grid;
+    place-items: center;
+    border: 1px dashed $borde;
+    color: $texto-tenue;
+  }
+
+  .nombre {
+    font-weight: 600;
+  }
+}
+
+.destacado {
+  margin-left: 0.4rem;
+  color: $advertencia;
+  font-weight: 600;
+}
+
+.fila.apagada {
+  .producto img,
+  .nombre {
+    opacity: 0.55;
+  }
+}
+
+.esqueleto {
+  @include esqueleto;
+  height: 3rem;
+}

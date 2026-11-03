@@ -1,0 +1,183 @@
+@use 'tema' as *;
+@use 'admin' as *;
+
+.volver {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.encabezado {
+  @include encabezado-admin;
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+
+  @include desde(md) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.cifra {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem 1.15rem;
+
+  span {
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  strong {
+    font-size: 1.9rem;
+    line-height: 1.1;
+  }
+
+  small {
+    font-size: 0.78rem;
+  }
+
+  &.destacada {
+    border-color: $exito;
+    background: $exito-claro;
+    color: $exito;
+
+    &.bajo {
+      border-color: $advertencia;
+      background: $advertencia-claro;
+      color: $advertencia;
+    }
+
+    &.agotado {
+      border-color: $peligro;
+      background: $peligro-claro;
+      color: $peligro;
+    }
+  }
+}
+
+.contenido {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+
+  @include desde(xl) {
+    grid-template-columns: 22rem minmax(0, 1fr);
+  }
+}
+
+.bloque {
+  min-width: 0;
+  padding: 1.25rem 1.5rem;
+
+  h2 {
+    @include titulo-bloque;
+  }
+}
+
+.pestanas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem;
+  border-radius: $radio;
+  background: $fondo;
+
+  button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.45rem 0.25rem;
+    border: 0;
+    border-radius: $radio-sm;
+    background: transparent;
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    &.activa {
+      background: $superficie;
+      color: $primario;
+      box-shadow: $sombra-suave;
+    }
+  }
+}
+
+.operaciones {
+  @include desde(xl) {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+
+.ayuda {
+  font-size: 0.85rem;
+}
+
+.vista-previa {
+  margin-top: 0.35rem;
+  color: $texto-suave;
+  font-size: 0.85rem;
+}
+
+.tabla {
+  overflow-x: auto;
+
+  th {
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    white-space: nowrap;
+  }
+
+  .detalle {
+    min-width: 9rem;
+    white-space: normal;
+  }
+
+  .positivo {
+    color: $exito;
+  }
+
+  .negativo {
+    color: $peligro;
+  }
+
+  .vacio {
+    padding: 2rem;
+    color: $texto-suave;
+    text-align: center;
+  }
+}
+
+.tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: $radio-pildora;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &.advertencia { background: $advertencia-claro; color: $advertencia; }
+  &.info { background: #e0f2fe; color: #0369a1; }
+  &.primario { background: $primario-claro; color: $primario; }
+  &.exito { background: $exito-claro; color: $exito; }
+  &.neutro { background: $fondo; color: $texto-suave; border: 1px solid $borde; }
+}
+
+.esqueleto {
+  @include esqueleto;
+  height: 22rem;
+}

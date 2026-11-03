@@ -1,0 +1,17 @@
+@use 'tema' as *;
+
+.no-encontrada {
+  padding: 6rem 1rem;
+  text-align: center;
+}
+
+.codigo {
+  display: block;
+  font-size: 6rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, $primario, $acento);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

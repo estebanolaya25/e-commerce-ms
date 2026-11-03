@@ -1,0 +1,91 @@
+@import 'tema';
+
+// ---- Personalización de Bootstrap: se define antes de importarlo ----
+$primary: $primario;
+$secondary: $texto-suave;
+$success: $exito;
+$danger: $peligro;
+$warning: $advertencia;
+$info: #0ea5e9;
+$light: $fondo;
+$dark: $texto;
+
+$body-bg: $fondo;
+$body-color: $texto;
+$font-family-sans-serif: $fuente;
+$headings-font-weight: 700;
+$headings-color: $texto;
+$link-decoration: none;
+
+$border-color: $borde;
+$border-radius: $radio;
+$border-radius-sm: $radio-sm;
+$border-radius-lg: $radio-lg;
+$border-radius-xl: $radio-xl;
+$box-shadow: $sombra-suave;
+$box-shadow-lg: $sombra-elevada;
+
+$btn-padding-y: 0.625rem;
+$btn-padding-x: 1.25rem;
+$btn-font-weight: 600;
+$btn-border-radius: $radio;
+$input-padding-y: 0.625rem;
+$input-padding-x: 0.875rem;
+$input-border-color: $borde;
+$input-focus-border-color: $primario;
+$card-border-color: $borde;
+$card-border-radius: $radio-lg;
+
+@import 'bootstrap/scss/bootstrap';
+
+// ---- Estilos globales ----
+body {
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+}
+
+.btn {
+  transition: transform $transicion, box-shadow $transicion, background-color $transicion;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.btn-primary {
+  box-shadow: 0 4px 14px rgba($primario, 0.25);
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba($primario, 0.35);
+  }
+}
+
+.form-control,
+.form-select {
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($primario, 0.12);
+  }
+}
+
+// Contorno de foco claro al navegar con teclado (no aparece al hacer clic con el mouse).
+:focus-visible {
+  outline: 3px solid rgba($primario, 0.55);
+  outline-offset: 2px;
+}
+
+.superficie {
+  background: $superficie;
+  border: 1px solid $borde;
+  border-radius: $radio-lg;
+  box-shadow: $sombra-suave;
+}
+
+.texto-suave {
+  color: $texto-suave;
+}

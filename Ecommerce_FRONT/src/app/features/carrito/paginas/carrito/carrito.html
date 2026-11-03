@@ -1,0 +1,99 @@
+<section class="container pagina-carrito">
+  <h1>Mi carrito</h1>
+
+  <div class="contenido" *ngIf="cargando">
+    <div class="esqueleto lista"></div>
+    <div class="esqueleto resumen-esqueleto"></div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <div class="vacio superficie" *ngIf="!cargando && carrito && carrito.items.length === 0">
+    <span class="icono"><i class="bi bi-bag"></i></span>
+    <h2>Su carrito está vacío</h2>
+    <p class="texto-suave">Explore el catálogo y agregue lo que le guste.</p>
+    <a class="btn btn-primary" routerLink="/productos"><i class="bi bi-grid me-2"></i>Ver productos</a>
+  </div>
+
+  <div class="contenido" *ngIf="!cargando && carrito && carrito.items.length > 0">
+    <div>
+      <div class="alert alert-warning d-flex gap-2" *ngFor="let aviso of carrito.avisos">
+        <i class="bi bi-exclamation-triangle"></i><span>{{ aviso }}</span>
+      </div>
+
+      <div class="lista superficie">
+        <div class="cabecera-lista">
+          <span>{{ carrito.unidades }} {{ carrito.unidades === 1 ? 'producto' : 'productos' }}</span>
+          <button class="btn btn-link btn-sm text-danger" type="button" (click)="vaciar()" [disabled]="vaciando">
+            <i class="bi bi-trash3 me-1"></i>Vaciar carrito
+          </button>
+        </div>
+
+        <article class="item" *ngFor="let item of carrito.items" [class.con-problema]="etiquetasEstado[item.estado] && item.estado !== 'PocasUnidades'">
+          <a class="miniatura" [routerLink]="item.slug ? ['/producto', item.slug] : null">
+            <img *ngIf="item.imagenUrl; else sinImagen" [src]="item.imagenUrl" [alt]="item.nombre ?? item.sku">
+            <ng-template #sinImagen><i class="bi bi-image"></i></ng-template>
+          </a>
+
+          <div class="datos">
+            <a class="nombre" [routerLink]="item.slug ? ['/producto', item.slug] : null">{{ item.nombre ?? item.sku }}</a>
+            <span class="opciones" *ngIf="opcionesTexto(item)">{{ opcionesTexto(item) }}</span>
+            <span class="estado" *ngIf="etiquetasEstado[item.estado] as e" [ngClass]="e.clase">
+              <i class="bi" [ngClass]="e.icono"></i>{{ e.texto }}
+              <ng-container *ngIf="item.estado === 'StockInsuficiente' || item.estado === 'PocasUnidades'"> (quedan {{ item.stockDisponible }})</ng-container>
+            </span>
+            <span class="precio-unitario" *ngIf="item.precioUnitario !== null">
+              {{ item.precioUnitario | cop }} c/u
+              <s *ngIf="item.precioAntes">{{ item.precioAntes | cop }}</s>
+            </span>
+          </div>
+
+          <div class="controles">
+            <div class="cantidad">
+              <button type="button" (click)="cambiarCantidad(item, -1)" [disabled]="ocupados.has(item.sku)" aria-label="Menos">
+                <i class="bi" [ngClass]="item.cantidad === 1 ? 'bi-trash3' : 'bi-dash'"></i>
+              </button>
+              <span>
+                <span class="spinner-border spinner-border-sm" *ngIf="ocupados.has(item.sku); else numero"></span>
+                <ng-template #numero>{{ item.cantidad }}</ng-template>
+              </span>
+              <button type="button" (click)="cambiarCantidad(item, 1)" [disabled]="ocupados.has(item.sku) || item.cantidad >= maximo(item)" aria-label="Más">
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
+            <strong class="subtotal">{{ item.subtotal | cop }}</strong>
+            <button class="quitar" type="button" (click)="quitar(item)" [disabled]="ocupados.has(item.sku)">Quitar</button>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <aside class="resumen superficie">
+      <h2>Resumen</h2>
+
+      <div class="envio-gratis" *ngIf="faltaParaEnvioGratis > 0; else envioLogrado">
+        <span>Le faltan <strong>{{ faltaParaEnvioGratis | cop }}</strong> para el envío gratis</span>
+        <div class="barra"><div [style.width.%]="progresoEnvioGratis"></div></div>
+      </div>
+      <ng-template #envioLogrado>
+        <div class="envio-gratis logrado"><i class="bi bi-truck me-2"></i>¡Su pedido tiene envío gratis!</div>
+      </ng-template>
+
+      <dl>
+        <dt>Subtotal</dt>
+        <dd>{{ carrito.total | cop }}</dd>
+        <dt>Envío</dt>
+        <dd>{{ envio === 0 ? 'Gratis' : (envio | cop) }}</dd>
+        <dt class="total">Total</dt>
+        <dd class="total">{{ carrito.total + envio | cop }}</dd>
+      </dl>
+
+      <a class="btn btn-primary btn-lg w-100" routerLink="/checkout" [class.disabled]="!carrito.puedeComprar"
+         [attr.aria-disabled]="!carrito.puedeComprar">
+        Continuar al pago<i class="bi bi-arrow-right ms-2"></i>
+      </a>
+      <p class="nota" *ngIf="!carrito.puedeComprar">Ajuste los productos marcados en rojo para continuar.</p>
+      <a class="seguir" routerLink="/productos"><i class="bi bi-arrow-left me-1"></i>Seguir comprando</a>
+    </aside>
+  </div>
+</section>

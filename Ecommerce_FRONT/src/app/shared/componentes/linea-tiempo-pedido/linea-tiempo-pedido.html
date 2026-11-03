@@ -1,0 +1,12 @@
+<ol class="linea-tiempo">
+  <li *ngFor="let evento of eventos; let primero = first" [class.reciente]="primero">
+    <span class="punto" [ngClass]="esNota(evento) ? 'neutro' : info(evento.estadoNuevo).clase">
+      <i class="bi" [ngClass]="esNota(evento) ? 'bi-info-circle' : info(evento.estadoNuevo).icono"></i>
+    </span>
+    <div>
+      <strong>{{ esNota(evento) ? 'Actualización' : info(evento.estadoNuevo).texto }}</strong>
+      <span class="motivo" *ngIf="evento.motivo">{{ evento.motivo }}</span>
+      <time>{{ fecha(evento.createdAt) | date: 'd MMM, h:mm:ss a' }}</time>
+    </div>
+  </li>
+</ol>

@@ -1,0 +1,11 @@
+<div class="contenedor-avisos" aria-live="polite">
+  <div class="aviso" *ngFor="let aviso of avisos$ | async" [ngClass]="aviso.tipo" role="status">
+    <i class="bi icono" [ngClass]="iconos[aviso.tipo]"></i>
+    <div class="texto">
+      <strong>{{ aviso.titulo }}</strong>
+      <span *ngIf="aviso.mensaje">{{ aviso.mensaje }}</span>
+      <a *ngIf="aviso.enlace" [routerLink]="aviso.enlace.ruta" (click)="cerrar(aviso.id)">{{ aviso.enlace.texto }} <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <button type="button" class="cerrar" (click)="cerrar(aviso.id)" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
+  </div>
+</div>

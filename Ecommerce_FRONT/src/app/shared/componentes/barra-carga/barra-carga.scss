@@ -1,0 +1,37 @@
+@use 'tema' as *;
+
+.barra-carga {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  height: 3px;
+  overflow: hidden;
+  background: rgba($primario, 0.15);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, $primario, $acento);
+    animation: avanzar 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes avanzar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-carga::after {
+    width: 100%;
+    animation: none;
+  }
+}

@@ -1,0 +1,72 @@
+<header class="encabezado">
+  <h1>Hola, {{ nombre }}</h1>
+  <p class="texto-suave">Este es el estado de la tienda en este momento.</p>
+</header>
+
+<section class="inventario" *ngIf="veInventario">
+  <h2>Inventario</h2>
+  <div class="alertas">
+    <a class="alerta superficie agotados" routerLink="/admin/inventario" [queryParams]="{ vista: 'agotados' }">
+      <i class="bi bi-x-octagon"></i>
+      <div><strong>{{ inventario?.agotados ?? '…' }}</strong><span class="texto-suave">SKU agotados</span></div>
+    </a>
+    <a class="alerta superficie bajo" routerLink="/admin/inventario" [queryParams]="{ vista: 'bajo-minimo' }">
+      <i class="bi bi-exclamation-triangle"></i>
+      <div><strong>{{ inventario?.bajoMinimo ?? '…' }}</strong><span class="texto-suave">SKU bajo el mínimo</span></div>
+    </a>
+  </div>
+</section>
+
+<ng-container *ngIf="vePedidos; else sinPedidos">
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <div class="destacado superficie" *ngIf="!cargando && !error">
+    <span class="icono"><i class="bi bi-box-seam"></i></span>
+    <div>
+      <strong>{{ porDespachar }} {{ porDespachar === 1 ? 'pedido' : 'pedidos' }} por despachar</strong>
+      <span class="texto-suave">Pagados o en preparación, esperando salir de bodega.</span>
+    </div>
+    <a class="btn btn-primary btn-sm ms-auto" routerLink="/admin/pedidos" [queryParams]="{ estado: 'Pagado' }">Ver pagados</a>
+  </div>
+
+  <div class="tarjetas">
+    <ng-container *ngIf="cargando">
+      <div class="tarjeta esqueleto" *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8]"></div>
+    </ng-container>
+    <a class="tarjeta superficie" *ngFor="let t of tarjetas" routerLink="/admin/pedidos" [queryParams]="{ estado: t.estado }">
+      <span class="icono" [ngClass]="t.clase"><i class="bi" [ngClass]="t.icono"></i></span>
+      <strong class="total">{{ t.total }}</strong>
+      <span class="texto-suave">{{ t.texto }}</span>
+    </a>
+  </div>
+
+  <section class="superficie ultimos" *ngIf="ultimos.length">
+    <div class="titulo">
+      <h2>Últimos pedidos</h2>
+      <a routerLink="/admin/pedidos">Ver todos <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr><th>Número</th><th>Fecha</th><th>Estado</th><th class="text-end">Total</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of ultimos">
+          <td><a [routerLink]="['/admin/pedidos', p.pedidoId]">{{ p.numero }}</a></td>
+          <td class="texto-suave">{{ fecha(p.createdAt) | date: 'd MMM, h:mm a' }}</td>
+          <td><app-estado-pedido [estado]="p.estado"></app-estado-pedido></td>
+          <td class="text-end fw-semibold">{{ p.total | cop }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</ng-container>
+
+<ng-template #sinPedidos>
+  <div class="superficie bienvenida" *ngIf="!veInventario">
+    <i class="bi bi-tools"></i>
+    <div>
+      <strong>Su rol no incluye la gestión de pedidos.</strong>
+      <span class="texto-suave">Use el menú lateral para ir a sus secciones.</span>
+    </div>
+  </div>
+</ng-template>

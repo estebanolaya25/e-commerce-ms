@@ -1,0 +1,69 @@
+@use 'tema' as *;
+@use 'admin' as *;
+
+.encabezado {
+  @include encabezado-admin;
+}
+
+.distribucion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+
+  &.con-formulario {
+    @include desde(xl) {
+      grid-template-columns: minmax(0, 1fr) 22rem;
+    }
+  }
+}
+
+.tabla {
+  @include tabla-admin;
+
+  .nombre {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    i {
+      color: $texto-tenue;
+    }
+  }
+
+  .raiz .nombre {
+    font-weight: 600;
+  }
+
+  .apagada .nombre {
+    opacity: 0.5;
+  }
+
+  .seleccionada td {
+    background: $primario-claro;
+  }
+}
+
+.formulario {
+  padding: 1.25rem 1.5rem;
+
+  @include desde(xl) {
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  h2 {
+    @include titulo-bloque;
+  }
+
+  .acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+.esqueleto {
+  @include esqueleto;
+  height: 1.6rem;
+}

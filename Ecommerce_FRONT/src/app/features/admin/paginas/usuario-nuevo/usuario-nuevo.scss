@@ -1,0 +1,68 @@
+@use 'tema' as *;
+@use 'admin' as *;
+
+.volver {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.encabezado {
+  @include encabezado-admin;
+}
+
+.contenido {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+
+  @include desde(xl) {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+
+.bloque {
+  min-width: 0;
+  padding: 1.25rem 1.5rem;
+
+  h2 {
+    @include titulo-bloque;
+  }
+}
+
+.pequeno {
+  font-size: 0.85rem;
+}
+
+.opciones-rol {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid $borde;
+  border-radius: $radio;
+  cursor: pointer;
+  transition: border-color $transicion, background $transicion;
+
+  .form-check-input {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+  }
+
+  &.marcada {
+    border-color: $primario;
+    background: $primario-claro;
+  }
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}

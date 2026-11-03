@@ -1,0 +1,15 @@
+@Gateway_Api_HostAddress = http://localhost:5100
+
+GET {{Gateway_Api_HostAddress}}/health
+
+###
+
+POST {{Gateway_Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "usuario@ejemplo.com",
+  "password": "Password123"
+}
+
+###

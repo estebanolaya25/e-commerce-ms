@@ -1,0 +1,152 @@
+@use 'tema' as *;
+
+.barra {
+  background: rgba($superficie, 0.85);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid $borde;
+  padding: 0.75rem 0;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.15rem;
+  color: $texto;
+
+  strong {
+    color: $primario;
+  }
+}
+
+.marca-icono {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: $radio;
+  background: linear-gradient(135deg, $primario, $acento);
+  color: $superficie;
+  font-size: 1.1rem;
+}
+
+.buscador {
+  position: relative;
+  width: 100%;
+
+  @include desde(lg) {
+    max-width: 26rem;
+  }
+
+  i {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $texto-tenue;
+  }
+
+  .form-control {
+    padding-left: 2.5rem;
+    border-radius: $radio-pildora;
+    background: $fondo;
+  }
+}
+
+.nav-link {
+  font-weight: 500;
+  color: $texto-suave;
+  border-radius: $radio-sm;
+
+  &:hover,
+  &.activo {
+    color: $primario;
+  }
+}
+
+.carrito {
+  position: relative;
+  font-size: 1.25rem;
+
+  .contador {
+    position: absolute;
+    top: 0.1rem;
+    right: -0.2rem;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.3rem;
+    border-radius: $radio-pildora;
+    background: $acento;
+    color: $superficie;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.15rem;
+    text-align: center;
+  }
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  border: 1px solid $borde;
+  border-radius: $radio-pildora;
+  background: $superficie;
+  color: $texto;
+  font-weight: 500;
+  transition: border-color $transicion, box-shadow $transicion;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    border-color: rgba($primario, 0.4);
+    box-shadow: 0 0 0 4px rgba($primario, 0.08);
+  }
+
+  .bi-chevron-down {
+    font-size: 0.75rem;
+    color: $texto-suave;
+  }
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $primario, #6366f1);
+  color: $superficie;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.menu-usuario {
+  min-width: 15rem;
+  padding: 0.5rem;
+  border: 1px solid $borde;
+  border-radius: $radio-lg;
+  box-shadow: $sombra-elevada;
+
+  .encabezado {
+    padding: 0.5rem 0.75rem;
+
+    strong,
+    span {
+      display: block;
+    }
+
+    span {
+      color: $texto-suave;
+      font-size: 0.85rem;
+    }
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: $radio-sm;
+  }
+}

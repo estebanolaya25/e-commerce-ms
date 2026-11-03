@@ -1,0 +1,28 @@
+@Gateway = http://localhost:5100
+@Token = PEGAR_ACCESS_TOKEN_DE_ADMINISTRADOR
+
+GET {{Gateway}}/api/catalogo/categorias
+
+###
+
+GET {{Gateway}}/api/catalogo/productos?pagina=1&tamano=20&categoria=hombre&orden=precio_asc
+
+###
+
+GET {{Gateway}}/api/catalogo/productos?buscar=camisa algodon&orden=relevancia
+
+###
+
+GET {{Gateway}}/api/catalogo/productos/camisa-oxford
+
+###
+
+POST {{Gateway}}/api/catalogo/marcas
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "nombre": "Nueva Marca"
+}
+
+###

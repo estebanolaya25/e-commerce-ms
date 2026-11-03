@@ -1,0 +1,43 @@
+@use 'tema' as *;
+
+.paginador {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 2.5rem;
+}
+
+.paso,
+.numero {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid $borde;
+  border-radius: $radio;
+  background: $superficie;
+  color: $texto;
+  font-weight: 600;
+  transition: border-color $transicion, background $transicion, color $transicion;
+
+  &:hover:not(:disabled):not(.actual) {
+    border-color: $primario;
+    color: $primario;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+  }
+}
+
+.actual {
+  border-color: $primario;
+  background: $primario;
+  color: $superficie;
+}
+
+.separador {
+  padding: 0 0.25rem;
+  color: $texto-tenue;
+}

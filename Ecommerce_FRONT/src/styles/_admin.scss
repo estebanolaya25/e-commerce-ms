@@ -1,0 +1,80 @@
+// Mixins de las páginas del panel de administración (no genera CSS por sí solo).
+// Se importa desde los componentes del panel con:  @use 'admin' as *;
+@use 'tema' as *;
+
+@mixin encabezado-admin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+  }
+}
+
+@mixin tabla-admin {
+  overflow-x: auto;
+  padding: 0.25rem 1rem;
+
+  th {
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    white-space: nowrap;
+  }
+
+  .vacio {
+    padding: 2.5rem;
+    color: $texto-suave;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
+@mixin esqueleto {
+  border-radius: $radio-sm;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo-admin 1.2s infinite;
+
+  @keyframes brillo-admin {
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+@mixin titulo-bloque {
+  margin-bottom: 0.9rem;
+  color: $texto-suave;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@mixin insignia-activo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: $radio-pildora;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: $exito-claro;
+  color: $exito;
+
+  &.inactivo {
+    background: $fondo;
+    color: $texto-suave;
+    border: 1px solid $borde;
+  }
+}

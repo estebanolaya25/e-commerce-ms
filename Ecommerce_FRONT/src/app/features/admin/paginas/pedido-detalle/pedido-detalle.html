@@ -1,0 +1,102 @@
+<a class="volver" routerLink="/admin/pedidos"><i class="bi bi-arrow-left me-1"></i>Pedidos</a>
+
+<div class="esqueleto" *ngIf="cargando"></div>
+<div class="alert alert-warning" *ngIf="noEncontrado">No se encontró el pedido.</div>
+
+<ng-container *ngIf="pedido as p">
+  <header class="encabezado">
+    <div>
+      <h1>{{ p.numero }}</h1>
+      <span class="texto-suave">{{ fecha(p.createdAt) | date: "d 'de' MMMM 'de' y, h:mm a" }}</span>
+    </div>
+    <app-estado-pedido [estado]="p.estado"></app-estado-pedido>
+  </header>
+
+  <!-- Acción de despacho -->
+  <div class="accion superficie" *ngIf="siguiente as s">
+    <ng-container *ngIf="puedeAvanzar; else soloLectura">
+      <div class="texto">
+        <strong>Siguiente paso: {{ s.accion }}</strong>
+        <span class="texto-suave">{{ s.ayuda }}</span>
+      </div>
+      <input class="form-control" [(ngModel)]="motivo" maxlength="300" placeholder="Nota opcional (guía, transportadora…)" aria-label="Nota">
+      <button class="btn btn-primary" type="button" (click)="avanzar()" [disabled]="avanzando">
+        <span class="spinner-border spinner-border-sm me-2" *ngIf="avanzando"></span>{{ s.accion }}
+      </button>
+    </ng-container>
+    <ng-template #soloLectura>
+      <span class="texto-suave"><i class="bi bi-lock me-1"></i>Solo administración o bodega pueden avanzar este pedido ({{ s.accion | lowercase }}).</span>
+    </ng-template>
+  </div>
+
+  <div class="despacho superficie" *ngIf="etapaActual >= 0">
+    <div class="etapa" *ngFor="let etapa of etapas; let i = index" [class.hecha]="i <= etapaActual" [class.actual]="i === etapaActual">
+      <span class="icono"><i class="bi" [ngClass]="etapa.icono"></i></span>
+      <span>{{ etapa.texto }}</span>
+    </div>
+  </div>
+
+  <div class="contenido">
+    <div class="columna">
+      <section class="superficie bloque">
+        <h2>Productos</h2>
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Producto</th><th>SKU</th><th class="text-center">Cant.</th><th class="text-end">Subtotal</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of p.items">
+              <td>{{ item.nombre }}<small class="d-block texto-suave">{{ opcionesTexto(item.opciones) }}</small></td>
+              <td><code>{{ item.sku }}</code></td>
+              <td class="text-center">{{ item.cantidad }}</td>
+              <td class="text-end">{{ item.subtotal | cop }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <dl class="totales">
+          <dt>Subtotal</dt><dd>{{ p.subtotal | cop }}</dd>
+          <dt>Envío</dt><dd>{{ p.costoEnvio === 0 ? 'Gratis' : (p.costoEnvio | cop) }}</dd>
+          <dt class="total">Total</dt><dd class="total">{{ p.total | cop }}</dd>
+        </dl>
+      </section>
+
+      <div class="dos-columnas" [class.una]="soloBodega">
+        <section class="superficie bloque" *ngIf="!soloBodega">
+          <h2>Cliente</h2>
+          <p class="mb-0 correo">{{ p.usuarioEmail ?? 'Sin correo' }}</p>
+        </section>
+        <section class="superficie bloque">
+          <h2>Envío</h2>
+          <p class="mb-0">
+            <strong>{{ p.direccion.nombreDestinatario }}</strong> · {{ p.direccion.telefono }}<br>
+            {{ p.direccion.direccion }}, {{ p.direccion.ciudad }} ({{ p.direccion.departamento }})
+            <ng-container *ngIf="p.direccion.notas"><br><span class="texto-suave">{{ p.direccion.notas }}</span></ng-container>
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <div class="columna">
+      <section class="superficie bloque pagos" *ngIf="pagos">
+        <div class="titulo-pagos">
+          <h2>Intentos de pago</h2>
+          <a *ngIf="pagos.length" routerLink="/admin/pagos" [queryParams]="{ pedidoId: p.pedidoId, numero: p.numero }">Ver en Pagos</a>
+        </div>
+        <p class="texto-suave mb-0" *ngIf="pagos.length === 0">El cliente aún no ha intentado pagar.</p>
+        <ul class="intentos" *ngIf="pagos.length">
+          <li *ngFor="let pago of pagos">
+            <div>
+              <strong>{{ pago.marca }} •••• {{ pago.ultimos4 }}</strong>
+              <small class="d-block texto-suave">{{ fecha(pago.createdAt) | date: 'd MMM, h:mm:ss a' }}</small>
+              <small class="d-block motivo" *ngIf="pago.motivoRechazo">{{ pago.motivoRechazo }}</small>
+            </div>
+            <app-estado-pago [estado]="pago.estado"></app-estado-pago>
+          </li>
+        </ul>
+      </section>
+
+      <section class="superficie bloque">
+        <h2>Historial</h2>
+        <app-linea-tiempo-pedido [historial]="p.historial"></app-linea-tiempo-pedido>
+      </section>
+    </div>
+  </div>
+</ng-container>

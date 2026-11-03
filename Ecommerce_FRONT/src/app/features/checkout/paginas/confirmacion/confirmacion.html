@@ -1,0 +1,51 @@
+<section class="container confirmacion">
+  <app-pasos [actual]="4"></app-pasos>
+
+  <div class="tarjeta superficie" *ngIf="pedido">
+    <div class="encabezado">
+      <span class="check"><i class="bi bi-check-lg"></i></span>
+      <h1>¡Gracias por su compra!</h1>
+      <p class="texto-suave">El pago fue aprobado y su pedido ya está en camino a preparación.</p>
+      <span class="numero">Pedido {{ pedido.numero }}</span>
+    </div>
+
+    <ul class="items">
+      <li *ngFor="let item of pedido.items">
+        <span class="miniatura">
+          <img *ngIf="item.imagenUrl" [src]="item.imagenUrl" [alt]="item.nombre">
+        </span>
+        <span class="nombre">
+          {{ item.nombre }}
+          <small>{{ opcionesTexto(item.opciones) }} · {{ item.cantidad }} × {{ item.precioUnitario | cop }}</small>
+        </span>
+        <strong>{{ item.subtotal | cop }}</strong>
+      </li>
+    </ul>
+
+    <div class="detalles">
+      <div>
+        <h2>Envío a</h2>
+        <p>
+          {{ pedido.direccion.nombreDestinatario }}<br>
+          {{ pedido.direccion.direccion }}<br>
+          {{ pedido.direccion.ciudad }}, {{ pedido.direccion.departamento }}<br>
+          <span class="texto-suave">{{ pedido.direccion.telefono }}</span>
+        </p>
+      </div>
+      <div>
+        <h2>Pago</h2>
+        <dl>
+          <dt>Subtotal</dt><dd>{{ pedido.subtotal | cop }}</dd>
+          <dt>Envío</dt><dd>{{ pedido.costoEnvio === 0 ? 'Gratis' : (pedido.costoEnvio | cop) }}</dd>
+          <dt class="total">Total pagado</dt><dd class="total">{{ pedido.total | cop }}</dd>
+        </dl>
+        <span class="texto-suave fecha" *ngIf="fechaPago">Aprobado el {{ fechaPago | date: 'd MMM y, h:mm a' }}</span>
+      </div>
+    </div>
+
+    <div class="acciones">
+      <a class="btn btn-primary" routerLink="/pedidos"><i class="bi bi-receipt me-2"></i>Ver mis pedidos</a>
+      <a class="btn btn-outline-primary" routerLink="/productos">Seguir comprando</a>
+    </div>
+  </div>
+</section>

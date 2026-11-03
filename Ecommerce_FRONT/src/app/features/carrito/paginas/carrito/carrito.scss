@@ -1,0 +1,303 @@
+@use 'tema' as *;
+
+.pagina-carrito {
+  padding-top: 2rem;
+
+  > h1 {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.contenido {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+
+  @include desde(lg) {
+    grid-template-columns: 1fr 22rem;
+  }
+}
+
+.cabecera-lista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid $borde;
+  color: $texto-suave;
+  font-weight: 500;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-bottom: 1px solid $borde;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &.con-problema {
+    background: $peligro-claro;
+  }
+
+  @include desde(md) {
+    grid-template-columns: 6rem 1fr auto;
+  }
+}
+
+.miniatura {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: $radio;
+  background: $fondo;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .bi {
+    color: $texto-tenue;
+    font-size: 1.5rem;
+  }
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.nombre {
+  color: $texto;
+  font-weight: 600;
+
+  &:hover {
+    color: $primario;
+  }
+}
+
+.opciones,
+.precio-unitario {
+  color: $texto-suave;
+  font-size: 0.85rem;
+
+  s {
+    margin-left: 0.35rem;
+    color: $texto-tenue;
+  }
+}
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  &.advertencia {
+    color: $advertencia;
+  }
+
+  &.peligro {
+    color: $peligro;
+  }
+
+  &.neutro {
+    color: $texto-suave;
+  }
+}
+
+.controles {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  @include desde(md) {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+.cantidad {
+  display: flex;
+  align-items: center;
+  height: 2.4rem;
+  border: 1.5px solid $borde;
+  border-radius: $radio;
+  background: $superficie;
+
+  button {
+    width: 2.4rem;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: $texto;
+
+    &:disabled {
+      color: $texto-tenue;
+    }
+  }
+
+  > span {
+    display: grid;
+    place-items: center;
+    min-width: 2rem;
+    font-weight: 700;
+  }
+}
+
+.subtotal {
+  font-size: 1.05rem;
+}
+
+.quitar {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $texto-suave;
+  font-size: 0.85rem;
+  text-decoration: underline;
+
+  &:hover {
+    color: $peligro;
+  }
+}
+
+.resumen {
+  padding: 1.5rem;
+
+  @include desde(lg) {
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  h2 {
+    margin-bottom: 1.25rem;
+    font-size: 1.2rem;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.6rem;
+    margin: 1.25rem 0 1.5rem;
+  }
+
+  dt {
+    color: $texto-suave;
+    font-weight: 400;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .total {
+    padding-top: 0.75rem;
+    border-top: 1px solid $borde;
+    color: $texto;
+    font-size: 1.2rem;
+    font-weight: 800;
+  }
+
+  .nota {
+    margin: 0.75rem 0 0;
+    color: $peligro;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .seguir {
+    display: block;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+}
+
+.envio-gratis {
+  padding: 0.85rem 1rem;
+  border-radius: $radio;
+  background: $primario-claro;
+  font-size: 0.85rem;
+
+  &.logrado {
+    background: $exito-claro;
+    color: $exito;
+    font-weight: 600;
+  }
+
+  .barra {
+    height: 0.4rem;
+    margin-top: 0.6rem;
+    overflow: hidden;
+    border-radius: $radio-pildora;
+    background: rgba($primario, 0.15);
+
+    div {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, $primario, $acento);
+      transition: width 0.4s ease;
+    }
+  }
+}
+
+.vacio {
+  max-width: 32rem;
+  margin: 2rem auto;
+  padding: 3.5rem 2rem;
+  text-align: center;
+
+  .icono {
+    display: inline-grid;
+    place-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    background: $primario-claro;
+    color: $primario;
+    font-size: 2rem;
+  }
+
+  h2 {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 1.4rem;
+  }
+}
+
+.esqueleto {
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+
+  &.lista {
+    height: 20rem;
+  }
+
+  &.resumen-esqueleto {
+    height: 16rem;
+  }
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

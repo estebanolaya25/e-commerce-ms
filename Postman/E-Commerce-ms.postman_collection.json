@@ -1,0 +1,2653 @@
+{
+  "info": {
+    "_postman_id": "d4d389e3-68e8-4916-a1bd-2892eed24b21",
+    "name": "E-Commerce-ms",
+    "description": "Recorrido de fin a fin por el gateway con los 7 microservicios.\n\nEjecute las carpetas 0 a 11 en orden con el Runner (la 12 es aparte). Cada petición guarda tokens e ids en las variables de la colección. Algunas peticiones esperan unos segundos a propósito: los eventos de RabbitMQ y el simulador de pagos son asíncronos.\n\nTarjetas de prueba: 4111 1111 1111 1111 (aprobada), 4000 0000 0000 0002 (rechazada), 5555 5555 5555 4444 (80 % aprobada).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Salud",
+      "item": [
+        {
+          "name": "Gateway vivo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Dice Healthy\", () => pm.expect(pm.response.text()).to.eql(\"Healthy\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Cliente nuevo (Auth)",
+      "item": [
+        {
+          "name": "Registro",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/registro",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cliente\",\n  \"apellido\": \"Postman\",\n  \"email\": \"{{correoCliente}}\",\n  \"password\": \"Prueba123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"correoCliente\", `cliente.${Date.now()}@ejemplo.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Trae access y refresh token\", () => { pm.expect(r.access_token).to.be.a(\"string\"); pm.expect(r.refresh_token).to.be.a(\"string\"); });",
+                  "pm.test(\"Rol Customer\", () => pm.expect(r.roles).to.include(\"Customer\"));",
+                  "pm.collectionVariables.set(\"tokenCliente\", r.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuario actual",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/auth/current",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es el usuario registrado\", () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get(\"correoCliente\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuario actual sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/auth/current",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Navegar el catálogo (público)",
+      "item": [
+        {
+          "name": "Árbol de categorías",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/categorias",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const cats = pm.response.json();",
+                  "pm.test(\"Hay categorías raíz con subcategorías\", () => pm.expect(cats.find(c => c.hijas.length > 0)).to.exist);",
+                  "pm.collectionVariables.set(\"subcategoriaId\", cats.find(c => c.hijas.length > 0).hijas[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marcas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/marcas",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Hay marcas activas\", () => pm.expect(pm.response.json().length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Productos de tecnología (más caros primero)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos?categoria=tecnologia&orden=precio_desc&tamano=5",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"Incluye productos de las subcategorías\", () => pm.expect(p.total).to.be.above(0));",
+                  "pm.test(\"Ordenado por precio descendente\", () => pm.expect(p.items[0].precioDesde).to.be.at.least(p.items[p.items.length - 1].precioDesde));",
+                  "pm.collectionVariables.set(\"slugProducto\", p.items[0].slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos/{{slugProducto}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Tiene variantes\", () => pm.expect(d.variantes.length).to.be.above(0));",
+                  "pm.test(\"Tiene imágenes\", () => pm.expect(d.imagenes.length).to.be.above(0));",
+                  "pm.collectionVariables.set(\"urlImagen\", d.imagenes[0].url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver imagen",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}{{urlImagen}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es una imagen\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/^image\\//));",
+                  "pm.test(\"Con cabecera nosniff\", () => pm.expect(pm.response.headers.get(\"X-Content-Type-Options\")).to.eql(\"nosniff\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Búsqueda en español",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos?buscar=jean tiro alto&orden=relevancia",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Encuentra resultados\", () => pm.expect(pm.response.json().total).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtro por rango de precio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos?precioMin=100000&precioMax=150000",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Todos dentro del rango\", () => pm.response.json().items.forEach(i => pm.expect(i.precioDesde).to.be.within(100000, 150000)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Slug inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos/no-existe-este-producto",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Seguridad entre servicios",
+      "item": [
+        {
+          "name": "Cliente intenta crear marca",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/marcas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"No debería\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin token intenta crear marca",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/marcas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"No debería\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente pide productos inactivos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos?incluirInactivos=true",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carrito sin token (lo frena el gateway)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/carrito",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente consulta stock de bodega",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Administrador crea un producto (Catálogo)",
+      "item": [
+        {
+          "name": "Login administrador",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Rol Administrator\", () => pm.expect(r.roles).to.include(\"Administrator\"));",
+                  "pm.collectionVariables.set(\"tokenAdmin\", r.access_token);",
+                  "pm.collectionVariables.set(\"refreshAdmin\", r.refresh_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear marca",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/marcas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Marca Postman {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"sufijo\", Date.now().toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"marcaId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marca duplicada",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/marcas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Marca Postman {{sufijo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear producto con variantes",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": \"{{subcategoriaId}}\",\n  \"marcaId\": \"{{marcaId}}\",\n  \"nombre\": \"Producto Postman {{sufijo}}\",\n  \"descripcionCorta\": \"Creado desde Postman\",\n  \"precioBase\": 99900,\n  \"atributos\": {\n    \"material\": \"Algodón\"\n  },\n  \"variantes\": [\n    {\n      \"sku\": \"PM-{{sufijo}}-M\",\n      \"opciones\": {\n        \"talla\": \"M\"\n      }\n    },\n    {\n      \"sku\": \"PM-{{sufijo}}-L\",\n      \"opciones\": {\n        \"talla\": \"L\"\n      },\n      \"precio\": 89900,\n      \"precioAntes\": 99900\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"Creó 2 variantes\", () => pm.expect(p.variantes.length).to.eql(2));",
+                  "pm.collectionVariables.set(\"productoId\", p.id);",
+                  "pm.collectionVariables.set(\"skuM\", p.variantes.find(v => v.sku.endsWith(\"-M\")).sku);",
+                  "pm.collectionVariables.set(\"skuL\", p.variantes.find(v => v.sku.endsWith(\"-L\")).sku);",
+                  "pm.collectionVariables.set(\"varianteMId\", p.variantes.find(v => v.sku.endsWith(\"-M\")).id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El SKU no se puede cambiar",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/variantes/{{varianteMId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"OTRO-SKU\",\n  \"opciones\": {\n    \"talla\": \"M\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Subir imagen",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos/{{productoId}}/imagenes",
+            "description": "Si Postman no encuentra el archivo, selecciona cualquier JPG, PNG o WEBP en el campo 'archivo'.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "C:/Users/Usuario/Documents/E-Commerce-ms/Postman/imagen-prueba.png"
+                },
+                {
+                  "key": "textoAlternativo",
+                  "value": "Foto desde Postman",
+                  "type": "text"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Queda como principal\", () => pm.expect(pm.response.json().esPrincipal).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El público lo ve (caché invalidada)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos?buscar=Postman {{sufijo}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"Aparece de inmediato\", () => pm.expect(p.total).to.eql(1));",
+                  "pm.test(\"Con su imagen\", () => pm.expect(p.items[0].imagenUrl).to.be.a(\"string\"));",
+                  "pm.test(\"Precio desde la variante con descuento\", () => pm.expect(p.items[0].precioDesde).to.eql(89900));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Bodega (Inventario + evento de RabbitMQ)",
+      "item": [
+        {
+          "name": "Stock creado por el evento VarianteCreada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/disponibilidad?skus={{skuM}},{{skuL}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Da tiempo a que el evento viaje Catálogo -> RabbitMQ -> Inventario",
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Inventario ya conoce los 2 SKU (los creó al recibir el evento)\", () => pm.expect(d.every(x => x.existe)).to.be.true);",
+                  "pm.test(\"Arrancan agotados (stock 0)\", () => pm.expect(d.every(x => x.agotado)).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login bodega (rol Warehouse)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{bodegaEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Rol Warehouse\", () => pm.expect(r.roles).to.include(\"Warehouse\"));",
+                  "pm.collectionVariables.set(\"tokenBodega\", r.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrada de mercancía talla M",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock/{{skuM}}/entradas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 20,\n  \"motivo\": \"Llegada de proveedor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenBodega}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Quedan 20 disponibles\", () => pm.expect(pm.response.json().cantidadDisponible).to.eql(20));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrada de mercancía talla L",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock/{{skuL}}/entradas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 5,\n  \"motivo\": \"Llegada de proveedor\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenBodega}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ajuste que dejaría stock negativo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock/{{skuL}}/ajustes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": -100,\n  \"motivo\": \"Error de conteo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenBodega}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial de movimientos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock/{{skuM}}/movimientos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenBodega}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const m = pm.response.json();",
+                  "pm.test(\"Registra el Alta (evento) y la Entrada\", () => pm.expect(m.map(x => x.tipo)).to.include.members([\"Alta\", \"Entrada\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disponibilidad pública (la usa Carrito)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/disponibilidad?skus={{skuM}},{{skuL}},NO-EXISTE",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"M disponible, L con pocas unidades, el otro no existe\", () => {",
+                  "  pm.expect(d[0].disponible).to.eql(20);",
+                  "  pm.expect(d[1].pocasUnidades).to.be.true;",
+                  "  pm.expect(d[2].existe).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Carrito (Redis + Catálogo + Inventario)",
+      "item": [
+        {
+          "name": "Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{gateway}}/api/carrito",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar 2 unidades talla M",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/carrito/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{skuM}}\",\n  \"cantidad\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const c = pm.response.json();",
+                  "pm.test(\"Trae nombre y precio desde Catálogo\", () => { pm.expect(c.items[0].nombre).to.include(\"Postman\"); pm.expect(c.items[0].precioUnitario).to.eql(99900); });",
+                  "pm.test(\"Disponible según Inventario\", () => pm.expect(c.items[0].estado).to.eql(\"Disponible\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar de nuevo suma la cantidad",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/carrito/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{skuM}}\",\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Ahora son 3\", () => pm.expect(pm.response.json().items[0].cantidad).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pasar de 10 unidades",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/carrito/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{skuM}}\",\n  \"cantidad\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pedir más de lo que hay en bodega",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/carrito/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{skuL}}\",\n  \"cantidad\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Dice cuántas quedan\", () => pm.expect(pm.response.json().mensaje).to.include(\"5\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar 1 talla L",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/carrito/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{skuL}}\",\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Quitar la talla L",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{gateway}}/api/carrito/items/{{skuL}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver carrito listo para comprar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/carrito",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const c = pm.response.json();",
+                  "pm.test(\"3 unidades de la talla M\", () => pm.expect(c.unidades).to.eql(3));",
+                  "pm.test(\"Total = 3 x 99.900\", () => pm.expect(c.total).to.eql(299700));",
+                  "pm.test(\"Puede comprar\", () => pm.expect(c.puedeComprar).to.be.true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Compra y pago (Pedidos + Pagos + saga)",
+      "item": [
+        {
+          "name": "Checkout sin Idempotency-Key",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direccion\": {\n    \"nombreDestinatario\": \"Cliente Postman\",\n    \"telefono\": \"3001234567\",\n    \"direccion\": \"Calle 10 # 20-30\",\n    \"ciudad\": \"Medellín\",\n    \"departamento\": \"Antioquia\",\n    \"notas\": \"Dejar en portería\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveCompra}}"
+              }
+            ],
+            "url": "{{gateway}}/api/pedidos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direccion\": {\n    \"nombreDestinatario\": \"Cliente Postman\",\n    \"telefono\": \"3001234567\",\n    \"direccion\": \"Calle 10 # 20-30\",\n    \"ciudad\": \"Medellín\",\n    \"departamento\": \"Antioquia\",\n    \"notas\": \"Dejar en portería\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"claveCompra\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"Pedido pendiente de pago\", () => pm.expect(p.estado).to.eql(\"PendientePago\"));",
+                  "pm.test(\"Envío gratis (subtotal >= $150.000)\", () => pm.expect(p.costoEnvio).to.eql(0));",
+                  "pm.test(\"Guarda el precio del momento\", () => pm.expect(p.items[0].precioUnitario).to.eql(99900));",
+                  "pm.collectionVariables.set(\"pedidoId\", p.pedidoId);",
+                  "pm.collectionVariables.set(\"numeroPedido\", p.numero);",
+                  "console.log(\"Pedido creado:\", p.numero, \"total\", p.total);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Doble clic en Comprar (misma clave)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveCompra}}"
+              }
+            ],
+            "url": "{{gateway}}/api/pedidos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direccion\": {\n    \"nombreDestinatario\": \"Cliente Postman\",\n    \"telefono\": \"3001234567\",\n    \"direccion\": \"Calle 10 # 20-30\",\n    \"ciudad\": \"Medellín\",\n    \"departamento\": \"Antioquia\",\n    \"notas\": \"Dejar en portería\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve el mismo pedido\", () => pm.expect(pm.response.json().pedidoId).to.eql(pm.collectionVariables.get(\"pedidoId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El carrito se vació solo (evento PedidoCreado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/carrito",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Outbox de Pedidos -> RabbitMQ -> consumidor de Carrito",
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Carrito vacío\", () => pm.expect(pm.response.json().items.length).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stock reservado en Inventario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock/{{skuM}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenBodega}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test(\"3 reservadas, 17 disponibles\", () => { pm.expect(s.cantidadReservada).to.eql(3); pm.expect(s.cantidadDisponible).to.eql(17); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagar con tarjeta que se rechaza",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/pagar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tarjeta\": {\n    \"numero\": \"{{tarjetaRechazada}}\",\n    \"titular\": \"CLIENTE POSTMAN\",\n    \"mesVencimiento\": 12,\n    \"anioVencimiento\": 2030,\n    \"cvv\": \"123\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 202\", () => pm.response.to.have.status(202));",
+                  "pm.test(\"Pago en proceso\", () => pm.expect(pm.response.json().estadoPedido).to.eql(\"PagoEnProceso\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado: rechazado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// El simulador de Pagos responde entre 2 y 8 segundos",
+                  "setTimeout(() => {}, 10000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"Vuelve a PendientePago\", () => pm.expect(p.estado).to.eql(\"PendientePago\"));",
+                  "pm.test(\"Con el motivo del rechazo\", () => pm.expect(p.ultimoErrorPago).to.eql(\"Fondos insuficientes\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagar con tarjeta que se aprueba",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/pagar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tarjeta\": {\n    \"numero\": \"{{tarjetaAprobada}}\",\n    \"titular\": \"CLIENTE POSTMAN\",\n    \"mesVencimiento\": 12,\n    \"anioVencimiento\": 2030,\n    \"cvv\": \"123\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 202\", () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Doble clic en Pagar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/pagar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tarjeta\": {\n    \"numero\": \"{{tarjetaAprobada}}\",\n    \"titular\": \"CLIENTE POSTMAN\",\n    \"mesVencimiento\": 12,\n    \"anioVencimiento\": 2030,\n    \"cvv\": \"123\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resultado: pagado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera el evento PagoAprobado",
+                  "setTimeout(() => {}, 10000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"Pedido Pagado\", () => pm.expect(p.estado).to.eql(\"Pagado\"));",
+                  "console.log(\"Historial:\", p.historial.map(h => `${h.estadoNuevo}: ${h.motivo}`));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inventario descontó la venta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock/{{skuM}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenBodega}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test(\"Quedan 17 físicas y 0 reservadas\", () => { pm.expect(s.cantidadFisica).to.eql(17); pm.expect(s.cantidadReservada).to.eql(0); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mis pedidos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Aparece el pedido\", () => pm.expect(pm.response.json().items.map(p => p.numero)).to.include(pm.collectionVariables.get(\"numeroPedido\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Otro usuario no ve mi pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Intentos de pago registrados (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/pagos?pedidoId={{pedidoId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const estados = pm.response.json().items.map(p => p.estado).sort();",
+                  "pm.test(\"Un rechazado y un aprobado\", () => pm.expect(estados).to.eql([\"Aprobado\", \"Rechazado\"]));",
+                  "pm.test(\"Nunca guarda el número completo\", () => pm.response.json().items.forEach(p => pm.expect(p.ultimos4).to.have.lengthOf(4)));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Despacho (admin)",
+      "item": [
+        {
+          "name": "Cliente en endpoint de admin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/admin",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Saltar de Pagado a Entregado",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Entregado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "En preparación",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"EnPreparacion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enviado",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Enviado\",\n  \"motivo\": \"Guía 123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entregado",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"Entregado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Estado final Entregado\", () => pm.expect(pm.response.json().estado).to.eql(\"Entregado\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Compra cancelada (compensación)",
+      "item": [
+        {
+          "name": "Agregar 1 talla L ($89.900)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/carrito/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"{{skuL}}\",\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{claveCompra2}}"
+              }
+            ],
+            "url": "{{gateway}}/api/pedidos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direccion\": {\n    \"nombreDestinatario\": \"Cliente Postman\",\n    \"telefono\": \"3001234567\",\n    \"direccion\": \"Calle 10 # 20-30\",\n    \"ciudad\": \"Medellín\",\n    \"departamento\": \"Antioquia\",\n    \"notas\": \"Dejar en portería\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"claveCompra2\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const p = pm.response.json();",
+                  "pm.test(\"Paga envío (subtotal < $150.000)\", () => pm.expect(p.costoEnvio).to.eql(12000));",
+                  "pm.collectionVariables.set(\"pedidoCanceladoId\", p.pedidoId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoCanceladoId}}/cancelar",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Cancelado\", () => pm.expect(pm.response.json().estado).to.eql(\"Cancelado\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El stock volvió",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/inventario/stock/{{skuL}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenBodega}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"0 reservadas, 5 disponibles\", () => { pm.expect(pm.response.json().cantidadReservada).to.eql(0); pm.expect(pm.response.json().cantidadDisponible).to.eql(5); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagar un pedido cancelado",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoCanceladoId}}/pagar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tarjeta\": {\n    \"numero\": \"{{tarjetaAprobada}}\",\n    \"titular\": \"CLIENTE POSTMAN\",\n    \"mesVencimiento\": 12,\n    \"anioVencimiento\": 2030,\n    \"cvv\": \"123\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Limpieza (admin)",
+      "item": [
+        {
+          "name": "Desactivar producto",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos/{{productoId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El público ya no lo ve",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/productos?buscar=Postman {{sufijo}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Oculto\", () => pm.expect(pm.response.json().total).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Desactivar marca",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{gateway}}/api/catalogo/marcas/{{marcaId}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11. Sesión (refresh y logout)",
+      "item": [
+        {
+          "name": "Renovar token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshAdmin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Refresh token rotado\", () => pm.expect(r.refresh_token).to.not.eql(pm.collectionVariables.get(\"refreshAdmin\")));",
+                  "pm.collectionVariables.set(\"refreshNuevo\", r.refresh_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar sesión",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/revoke",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshNuevo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh después del logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshNuevo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reutilizar el refresh viejo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshAdmin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12. Experimentos (ejecutar aparte)",
+      "item": [
+        {
+          "name": "Rate limit: login fallido",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/auth/login",
+            "description": "Ejecútala con el Runner en 25 iteraciones: desde la 21 el gateway responde 429.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"noexiste@ejemplo.com\",\n  \"password\": \"Incorrecta1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 o 429\", () => pm.expect(pm.response.code).to.be.oneOf([401, 429]));",
+                  "console.log(\"Respuesta:\", pm.response.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pago aleatorio (80 % de aprobación)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{gateway}}/api/pedidos/{{pedidoId}}/pagar",
+            "description": "Haga antes un checkout nuevo (carpeta 7) y use su pedidoId. Esta tarjeta se aprueba el 80 % de las veces.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tarjeta\": {\n    \"numero\": \"{{tarjetaAleatoria}}\",\n    \"titular\": \"CLIENTE POSTMAN\",\n    \"mesVencimiento\": 12,\n    \"anioVencimiento\": 2030,\n    \"cvv\": \"123\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenCliente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"202 o 409\", () => pm.expect(pm.response.code).to.be.oneOf([202, 409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "gateway",
+      "value": "http://localhost:5100"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@ejemplo.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Demo12345"
+    },
+    {
+      "key": "bodegaEmail",
+      "value": "daniela.arango@ejemplo.com"
+    },
+    {
+      "key": "tarjetaAprobada",
+      "value": "4111 1111 1111 1111"
+    },
+    {
+      "key": "tarjetaRechazada",
+      "value": "4000 0000 0000 0002"
+    },
+    {
+      "key": "tarjetaAleatoria",
+      "value": "5555 5555 5555 4444"
+    },
+    {
+      "key": "correoCliente",
+      "value": ""
+    },
+    {
+      "key": "tokenCliente",
+      "value": ""
+    },
+    {
+      "key": "subcategoriaId",
+      "value": ""
+    },
+    {
+      "key": "slugProducto",
+      "value": ""
+    },
+    {
+      "key": "urlImagen",
+      "value": ""
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "refreshAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenBodega",
+      "value": ""
+    },
+    {
+      "key": "sufijo",
+      "value": ""
+    },
+    {
+      "key": "marcaId",
+      "value": ""
+    },
+    {
+      "key": "productoId",
+      "value": ""
+    },
+    {
+      "key": "varianteMId",
+      "value": ""
+    },
+    {
+      "key": "skuM",
+      "value": ""
+    },
+    {
+      "key": "skuL",
+      "value": ""
+    },
+    {
+      "key": "claveCompra",
+      "value": ""
+    },
+    {
+      "key": "pedidoId",
+      "value": ""
+    },
+    {
+      "key": "numeroPedido",
+      "value": ""
+    },
+    {
+      "key": "claveCompra2",
+      "value": ""
+    },
+    {
+      "key": "pedidoCanceladoId",
+      "value": ""
+    },
+    {
+      "key": "refreshNuevo",
+      "value": ""
+    }
+  ]
+}

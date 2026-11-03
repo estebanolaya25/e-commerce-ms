@@ -1,0 +1,14 @@
+<div class="producto-sku" [class.grande]="grande">
+  <img *ngIf="variante?.imagenUrl; else sinImagen" [src]="variante!.imagenUrl" [alt]="variante!.nombre" loading="lazy">
+  <ng-template #sinImagen><span class="sin-imagen"><i class="bi bi-box"></i></span></ng-template>
+  <div class="texto">
+    <ng-container *ngIf="variante; else soloSku">
+      <span class="nombre">{{ variante.nombre }}</span>
+      <small><code>{{ sku }}</code><ng-container *ngIf="opciones"> · {{ opciones }}</ng-container></small>
+    </ng-container>
+    <ng-template #soloSku>
+      <code class="nombre">{{ sku }}</code>
+      <small class="texto-suave">Sin producto activo en el catálogo</small>
+    </ng-template>
+  </div>
+</div>

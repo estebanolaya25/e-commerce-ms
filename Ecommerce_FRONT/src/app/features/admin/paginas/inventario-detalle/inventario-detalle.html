@@ -1,0 +1,100 @@
+<a class="volver" routerLink="/admin/inventario"><i class="bi bi-arrow-left me-1"></i>Inventario</a>
+
+<div class="esqueleto" *ngIf="cargando"></div>
+<div class="alert alert-warning" *ngIf="noEncontrado">El SKU <code>{{ sku }}</code> no está registrado en inventario.</div>
+
+<ng-container *ngIf="stock as s">
+  <header class="encabezado">
+    <app-producto-sku [sku]="s.sku" [variante]="variante" [grande]="true"></app-producto-sku>
+    <a class="btn btn-sm btn-outline-secondary" *ngIf="veCatalogo && s.productoId" [routerLink]="['/admin/catalogo', s.productoId]">
+      <i class="bi bi-pencil me-1"></i>Editar en catálogo
+    </a>
+  </header>
+
+  <div class="cifras">
+    <div class="cifra superficie">
+      <span class="texto-suave">Físico</span>
+      <strong>{{ s.cantidadFisica }}</strong>
+      <small class="texto-suave">En bodega</small>
+    </div>
+    <div class="cifra superficie">
+      <span class="texto-suave">Reservado</span>
+      <strong>{{ s.cantidadReservada }}</strong>
+      <small class="texto-suave">Pedidos sin pagar</small>
+    </div>
+    <div class="cifra superficie destacada" [class.bajo]="s.bajoMinimo && s.cantidadDisponible > 0" [class.agotado]="s.cantidadDisponible <= 0">
+      <span>Disponible</span>
+      <strong>{{ s.cantidadDisponible }}</strong>
+      <small>{{ s.cantidadDisponible <= 0 ? 'Agotado' : s.bajoMinimo ? 'Bajo el mínimo' : 'Para la venta' }}</small>
+    </div>
+    <div class="cifra superficie">
+      <span class="texto-suave">Mínimo</span>
+      <strong>{{ s.stockMinimo }}</strong>
+      <small class="texto-suave">Aviso de stock bajo</small>
+    </div>
+  </div>
+
+  <div class="contenido">
+    <section class="superficie bloque operaciones">
+      <div class="pestanas" role="tablist">
+        <button *ngFor="let o of operaciones" type="button" role="tab" [class.activa]="operacion === o.valor" [attr.aria-selected]="operacion === o.valor" (click)="operacion = o.valor">
+          <i class="bi" [ngClass]="o.icono"></i>{{ o.texto }}
+        </button>
+      </div>
+
+      <form *ngIf="operacion === 'entrada'" [formGroup]="formEntrada" (ngSubmit)="registrarEntrada()" novalidate>
+        <p class="texto-suave ayuda">Mercancía que llega a bodega. Suma al físico y queda disponible para la venta.</p>
+        <label class="form-label" for="entradaCantidad">Unidades</label>
+        <input id="entradaCantidad" class="form-control mb-1" type="number" min="1" max="100000" formControlName="cantidad" [class.is-invalid]="invalido('entrada', 'cantidad')">
+        <div class="invalid-feedback">Entre 1 y 100.000 unidades.</div>
+        <label class="form-label mt-2" for="entradaMotivo">Motivo</label>
+        <input id="entradaMotivo" class="form-control" formControlName="motivo" maxlength="250" placeholder="p. ej. Factura proveedor 4512" [class.is-invalid]="invalido('entrada', 'motivo')">
+        <div class="invalid-feedback">Entre 3 y 250 caracteres.</div>
+        <button class="btn btn-primary w-100 mt-3" type="submit" [disabled]="guardando">Registrar entrada</button>
+      </form>
+
+      <form *ngIf="operacion === 'ajuste'" [formGroup]="formAjuste" (ngSubmit)="registrarAjuste()" novalidate>
+        <p class="texto-suave ayuda">Corrige el físico tras un conteo, una pérdida o un daño. Use negativo para restar.</p>
+        <label class="form-label" for="ajusteCantidad">Unidades (+ o −)</label>
+        <input id="ajusteCantidad" class="form-control mb-1" type="number" min="-100000" max="100000" formControlName="cantidad" [class.is-invalid]="invalido('ajuste', 'cantidad') || ajusteInvalido">
+        <div class="invalid-feedback" *ngIf="!ajusteInvalido">Un número distinto de 0.</div>
+        <div class="invalid-feedback" *ngIf="ajusteInvalido">El físico no puede quedar por debajo de lo reservado ({{ s.cantidadReservada }}).</div>
+        <div class="vista-previa" *ngIf="fisicoTrasAjuste !== null && !ajusteInvalido">Físico: {{ s.cantidadFisica }} → <strong>{{ fisicoTrasAjuste }}</strong></div>
+        <label class="form-label mt-2" for="ajusteMotivo">Motivo</label>
+        <input id="ajusteMotivo" class="form-control" formControlName="motivo" maxlength="250" placeholder="p. ej. Conteo físico mensual" [class.is-invalid]="invalido('ajuste', 'motivo')">
+        <div class="invalid-feedback">Entre 3 y 250 caracteres.</div>
+        <button class="btn btn-primary w-100 mt-3" type="submit" [disabled]="guardando || ajusteInvalido">Aplicar ajuste</button>
+      </form>
+
+      <form *ngIf="operacion === 'minimo'" [formGroup]="formMinimo" (ngSubmit)="actualizarMinimo()" novalidate>
+        <p class="texto-suave ayuda">Cuando lo disponible llega a este número, el SKU aparece en "Bajo mínimo" y la tienda muestra "Pocas unidades".</p>
+        <label class="form-label" for="minimo">Stock mínimo</label>
+        <input id="minimo" class="form-control" type="number" min="0" max="100000" formControlName="stockMinimo" [class.is-invalid]="invalido('minimo', 'stockMinimo')">
+        <div class="invalid-feedback">Entre 0 y 100.000.</div>
+        <button class="btn btn-primary w-100 mt-3" type="submit" [disabled]="guardando">Guardar mínimo</button>
+      </form>
+    </section>
+
+    <section class="superficie bloque movimientos">
+      <h2>Últimos movimientos</h2>
+      <div class="tabla">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr><th>Fecha</th><th>Tipo</th><th class="text-end">Cantidad</th><th class="text-end">Físico</th><th class="text-end">Reservado</th><th>Detalle</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of movimientos">
+              <td class="texto-suave">{{ fecha(m.createdAt) | date: 'd MMM, h:mm a' }}</td>
+              <td><span class="tipo" [ngClass]="info(m.tipo).clase" [title]="info(m.tipo).ayuda"><i class="bi" [ngClass]="info(m.tipo).icono"></i>{{ info(m.tipo).texto }}</span></td>
+              <td class="text-end fw-semibold" [class.positivo]="m.cantidad > 0" [class.negativo]="m.cantidad < 0">{{ m.cantidad > 0 ? '+' : '' }}{{ m.cantidad }}</td>
+              <td class="text-end">{{ m.fisicaResultante }}</td>
+              <td class="text-end texto-suave">{{ m.reservadaResultante }}</td>
+              <td class="detalle">{{ m.motivo ?? '—' }}</td>
+            </tr>
+            <tr *ngIf="movimientos.length === 0"><td colspan="6" class="vacio">Sin movimientos.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</ng-container>

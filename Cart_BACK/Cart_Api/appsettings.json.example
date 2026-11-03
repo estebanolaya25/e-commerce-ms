@@ -1,0 +1,36 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "System.Net.Http.HttpClient": "Warning",
+      "Polly": "Warning",
+      "MassTransit": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "Redis": "localhost:6379,abortConnect=false,connectTimeout=2000,syncTimeout=2000"
+  },
+  "Jwt": {
+    "Issuer": "ecommerce-auth",
+    "Audience": "ecommerce-api",
+    "Key": "REEMPLAZAR_CON_LA_MISMA_CLAVE_DE_AUTH_API"
+  },
+  "Servicios": {
+    "CatalogoUrl": "http://localhost:5102/",
+    "InventarioUrl": "http://localhost:5103/"
+  },
+  "Carrito": {
+    "MaxProductos": "50",
+    "MaxUnidadesPorProducto": "10",
+    "DiasExpiracion": "30"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Puerto": "5672",
+    "VirtualHost": "/",
+    "Usuario": "guest",
+    "Password": "guest"
+  }
+}

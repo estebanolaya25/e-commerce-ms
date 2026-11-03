@@ -1,0 +1,55 @@
+// Tema de la tienda: solo variables y mixins (no genera CSS).
+// Se importa desde cualquier componente con:  @use 'tema' as *;
+
+// Paleta
+$primario: #4338ca;
+$primario-oscuro: #3730a3;
+$primario-claro: #eef2ff;
+$acento: #f97316;
+$acento-claro: #fff7ed;
+$exito: #16a34a;
+$exito-claro: #f0fdf4;
+$peligro: #dc2626;
+$peligro-claro: #fef2f2;
+$advertencia: #d97706;
+$advertencia-claro: #fffbeb;
+
+// Neutros
+$texto: #0f172a;
+$texto-suave: #64748b;
+$texto-tenue: #94a3b8;
+$borde: #e2e8f0;
+$fondo: #f8fafc;
+$superficie: #ffffff;
+
+// Tipografía
+$fuente: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+// Formas
+$radio-sm: 0.5rem;
+$radio: 0.75rem;
+$radio-lg: 1rem;
+$radio-xl: 1.5rem;
+$radio-pildora: 50rem;
+
+// Sombras
+$sombra-suave: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
+$sombra-media: 0 4px 6px rgba(15, 23, 42, 0.05), 0 10px 24px rgba(15, 23, 42, 0.08);
+$sombra-elevada: 0 12px 32px rgba(15, 23, 42, 0.14);
+
+$transicion: 0.2s ease;
+
+// Puntos de quiebre (los mismos de Bootstrap)
+$puntos-quiebre: (sm: 576px, md: 768px, lg: 992px, xl: 1200px, xxl: 1400px);
+
+@mixin desde($punto) {
+  @media (min-width: map-get($puntos-quiebre, $punto)) {
+    @content;
+  }
+}
+
+@mixin hasta($punto) {
+  @media (max-width: map-get($puntos-quiebre, $punto) - 0.02px) {
+    @content;
+  }
+}

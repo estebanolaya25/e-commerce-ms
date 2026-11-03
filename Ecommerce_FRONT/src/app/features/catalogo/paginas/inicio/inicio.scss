@@ -1,0 +1,173 @@
+@use 'tema' as *;
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 5rem 0 6rem;
+  background:
+    radial-gradient(circle at 85% 20%, rgba($acento, 0.45), transparent 45%),
+    linear-gradient(135deg, $primario-oscuro, $primario 55%, #6366f1);
+  color: $superficie;
+}
+
+.hero-contenido {
+  position: relative;
+  max-width: 46rem;
+
+  h1 {
+    margin: 1rem 0;
+    color: $superficie;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    line-height: 1.1;
+  }
+
+  p {
+    max-width: 34rem;
+    margin-bottom: 2rem;
+    font-size: 1.125rem;
+    opacity: 0.9;
+  }
+}
+
+.resaltado {
+  color: #fed7aa;
+}
+
+.etiqueta {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: $radio-pildora;
+  background: rgba($superficie, 0.15);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.beneficios {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  margin-top: -2.5rem;
+  margin-bottom: 3.5rem;
+
+  @include desde(md) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.beneficio {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+
+  i {
+    font-size: 1.75rem;
+    color: $primario;
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  span {
+    color: $texto-suave;
+    font-size: 0.875rem;
+  }
+}
+
+.seccion {
+  margin-bottom: 3.5rem;
+}
+
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0;
+  }
+
+  a {
+    font-weight: 600;
+  }
+}
+
+.rejilla-categorias {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+
+  @include desde(md) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include desde(lg) {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.tarjeta-categoria {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.75rem 1rem;
+  color: $texto;
+  text-align: center;
+  transition: transform $transicion, box-shadow $transicion, border-color $transicion;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba($primario, 0.35);
+    box-shadow: $sombra-media;
+  }
+
+  .icono {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: $radio-lg;
+    background: $primario-claro;
+    color: $primario;
+    font-size: 1.6rem;
+  }
+
+  span {
+    font-size: 0.8rem;
+  }
+}
+
+.rejilla-productos {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, 1fr);
+
+  @include desde(md) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include desde(lg) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.esqueleto {
+  height: 10rem;
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

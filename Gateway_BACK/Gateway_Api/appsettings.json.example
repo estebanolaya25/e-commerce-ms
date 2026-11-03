@@ -1,0 +1,41 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Yarp": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "Jwt": {
+    "Issuer": "ecommerce-auth",
+    "Audience": "ecommerce-api",
+    "Key": "REEMPLAZAR_CON_LA_MISMA_CLAVE_DE_AUTH_API"
+  },
+  "RateLimit": {
+    "Auth": {
+      "PermitLimit": "20",
+      "VentanaSegundos": "60"
+    },
+    "Catalogo": {
+      "PermitLimit": "300",
+      "VentanaSegundos": "60"
+    },
+    "Inventario": {
+      "PermitLimit": "300",
+      "VentanaSegundos": "60"
+    },
+    "Carrito": {
+      "PermitLimit": "120",
+      "VentanaSegundos": "60"
+    },
+    "Pedidos": {
+      "PermitLimit": "120",
+      "VentanaSegundos": "60"
+    },
+    "Pagos": {
+      "PermitLimit": "60",
+      "VentanaSegundos": "60"
+    }
+  }
+}

@@ -1,0 +1,357 @@
+@use 'tema' as *;
+
+.detalle {
+  padding-top: 1.5rem;
+}
+
+.migas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  color: $texto-suave;
+  font-size: 0.85rem;
+
+  i {
+    font-size: 0.7rem;
+  }
+}
+
+.cuadricula {
+  display: grid;
+  gap: 2.5rem;
+
+  @include desde(lg) {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 3.5rem;
+  }
+}
+
+.principal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid $borde;
+  border-radius: $radio-xl;
+  background: $superficie;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  > .bi {
+    color: $texto-tenue;
+    font-size: 4rem;
+  }
+
+  .insignia {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: $radio-pildora;
+    background: $acento;
+    color: $superficie;
+    font-weight: 700;
+  }
+}
+
+.miniaturas {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+
+  button {
+    width: 5rem;
+    height: 5rem;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: $radio;
+    background: $superficie;
+    opacity: 0.7;
+    transition: border-color $transicion, opacity $transicion;
+
+    &:hover,
+    &.activa {
+      opacity: 1;
+    }
+
+    &.activa {
+      border-color: $primario;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}
+
+.info {
+  h1 {
+    margin: 0.35rem 0 0.5rem;
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+  }
+}
+
+.marca {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.precios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 1.25rem 0 1.75rem;
+}
+
+.precio {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.antes {
+  color: $texto-tenue;
+  font-size: 1.1rem;
+  text-decoration: line-through;
+}
+
+.ahorro {
+  padding: 0.2rem 0.6rem;
+  border-radius: $radio-pildora;
+  background: $exito-claro;
+  color: $exito;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.opciones {
+  margin-bottom: 1.25rem;
+}
+
+.titulo-opcion {
+  margin-bottom: 0.55rem;
+  color: $texto-suave;
+  font-size: 0.9rem;
+
+  strong {
+    color: $texto;
+  }
+}
+
+.valores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.valor {
+  min-width: 3rem;
+  padding: 0.5rem 0.95rem;
+  border: 1.5px solid $borde;
+  border-radius: $radio;
+  background: $superficie;
+  color: $texto;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: border-color $transicion, background $transicion, color $transicion;
+
+  &:hover {
+    border-color: $primario;
+  }
+
+  &.elegido {
+    border-color: $primario;
+    background: $primario-claro;
+    color: $primario;
+    font-weight: 700;
+  }
+
+  &.atenuado {
+    border-style: dashed;
+    color: $texto-tenue;
+  }
+
+  &.agotado {
+    color: $texto-tenue;
+    text-decoration: line-through;
+  }
+}
+
+.estado-stock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 1.5rem 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: $radio;
+  background: $fondo;
+  font-weight: 600;
+
+  .disponible {
+    color: $exito;
+  }
+
+  .pocas {
+    color: $advertencia;
+  }
+
+  .agotado {
+    color: $peligro;
+  }
+
+  .consultando {
+    color: $texto-suave;
+    font-weight: 500;
+  }
+
+  .sku {
+    color: $texto-tenue;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+}
+
+.compra {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cantidad {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid $borde;
+  border-radius: $radio;
+  background: $superficie;
+
+  button {
+    width: 2.75rem;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: $texto;
+    font-size: 1.1rem;
+
+    &:disabled {
+      color: $texto-tenue;
+    }
+  }
+
+  span {
+    min-width: 2rem;
+    font-weight: 700;
+    text-align: center;
+  }
+}
+
+.garantias {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.75rem 0 0;
+  padding: 1.25rem 0 0;
+  border-top: 1px solid $borde;
+  list-style: none;
+  color: $texto-suave;
+  font-size: 0.9rem;
+
+  i {
+    margin-right: 0.6rem;
+    color: $primario;
+  }
+}
+
+.descripcion {
+  display: grid;
+  gap: 2rem;
+  margin-top: 3rem;
+  padding: 2rem;
+
+  @include desde(lg) {
+    grid-template-columns: 1.4fr 1fr;
+  }
+
+  h2 {
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+  }
+
+  p {
+    margin: 0;
+    color: $texto-suave;
+    line-height: 1.7;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem 1.5rem;
+    margin: 0;
+  }
+
+  dt {
+    color: $texto-suave;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+.vacio {
+  max-width: 34rem;
+  margin: 3rem auto;
+  padding: 3.5rem 2rem;
+  text-align: center;
+
+  > .bi {
+    color: $texto-tenue;
+    font-size: 3rem;
+  }
+
+  h1 {
+    margin: 1rem 0 0.5rem;
+    font-size: 1.5rem;
+  }
+}
+
+.esqueleto {
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+}
+
+.galeria-esqueleto {
+  aspect-ratio: 1;
+}
+
+.linea {
+  height: 1.25rem;
+  margin-bottom: 1rem;
+
+  &.alta {
+    height: 2.5rem;
+  }
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

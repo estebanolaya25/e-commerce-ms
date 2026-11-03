@@ -1,0 +1,5 @@
+<nav class="pestanas" aria-label="Secciones del catálogo">
+  <a *ngFor="let p of pestanas" [routerLink]="p.ruta" [class.activa]="p.clave === activa" [attr.aria-current]="p.clave === activa ? 'page' : null">
+    <i class="bi" [ngClass]="p.icono"></i>{{ p.texto }}
+  </a>
+</nav>

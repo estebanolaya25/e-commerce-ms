@@ -1,0 +1,180 @@
+name: ecommerce
+
+services:
+  gateway:
+    build:
+      context: ./Gateway_BACK
+      dockerfile: Dockerfile
+    container_name: gateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      RateLimit__Auth__PermitLimit: "20"
+      RateLimit__Auth__VentanaSegundos: "60"
+      RateLimit__Catalogo__PermitLimit: "300"
+      RateLimit__Catalogo__VentanaSegundos: "60"
+      RateLimit__Inventario__PermitLimit: "300"
+      RateLimit__Inventario__VentanaSegundos: "60"
+      RateLimit__Carrito__PermitLimit: "120"
+      RateLimit__Carrito__VentanaSegundos: "60"
+      RateLimit__Pedidos__PermitLimit: "120"
+      RateLimit__Pedidos__VentanaSegundos: "60"
+      RateLimit__Pagos__PermitLimit: "60"
+      RateLimit__Pagos__VentanaSegundos: "60"
+      RateLimit__Administracion__PermitLimit: "120"
+      RateLimit__Administracion__VentanaSegundos: "60"
+      ReverseProxy__Clusters__auth__Destinations__auth1__Address: "http://auth-api:8080/"
+      ReverseProxy__Clusters__catalogo__Destinations__catalogo1__Address: "http://catalog-api:8080/"
+      ReverseProxy__Clusters__inventario__Destinations__inventario1__Address: "http://inventory-api:8080/"
+      ReverseProxy__Clusters__carrito__Destinations__carrito1__Address: "http://cart-api:8080/"
+      ReverseProxy__Clusters__pedidos__Destinations__pedidos1__Address: "http://orders-api:8080/"
+      ReverseProxy__Clusters__pagos__Destinations__pagos1__Address: "http://payments-api:8080/"
+    ports:
+      - "5100:8080"
+    depends_on:
+      - auth-api
+      - catalog-api
+      - inventory-api
+      - cart-api
+      - orders-api
+      - payments-api
+    restart: unless-stopped
+
+  auth-api:
+    build:
+      context: ./Auth_BACK
+      dockerfile: Dockerfile
+    container_name: auth-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SQLConnectionString: "Server=host.docker.internal,1433;Database=EcommerceAuthDB;User Id=${AUTH_DB_USER};Password=${AUTH_DB_PASSWORD};TrustServerCertificate=True;"
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      Jwt__JWT_EXPIRE_MINUTES: "15"
+      Jwt__RefreshTokenDays: "7"
+      Seguridad__MaxIntentosFallidos: "5"
+      Seguridad__MinutosBloqueo: "15"
+    restart: unless-stopped
+
+  catalog-api:
+    build:
+      context: ./Catalog_BACK
+      dockerfile: Dockerfile
+    container_name: catalog-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__PostgresConnectionString: "Host=host.docker.internal;Port=5432;Database=ecommerce_catalog;Username=${CATALOG_DB_USER};Password=${CATALOG_DB_PASSWORD}"
+      ConnectionStrings__Redis: "host.docker.internal:6379,abortConnect=false,connectTimeout=2000,syncTimeout=2000"
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      Cache__MinutosListado: "5"
+      Cache__MinutosDetalle: "30"
+      Imagenes__RutaFisica: /app/imagenes
+      Imagenes__UrlBase: /api/catalogo/imagenes
+      Imagenes__TamanoMaximoMB: "5"
+      Imagenes__MaximoPorProducto: "10"
+      RabbitMQ__Host: host.docker.internal
+      RabbitMQ__Usuario: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - catalog-imagenes:/app/imagenes
+    restart: unless-stopped
+
+  inventory-api:
+    build:
+      context: ./Inventory_BACK
+      dockerfile: Dockerfile
+    container_name: inventory-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SQLConnectionString: "Server=host.docker.internal,1433;Database=EcommerceInventoryDB;User Id=${INVENTORY_DB_USER};Password=${INVENTORY_DB_PASSWORD};TrustServerCertificate=True;"
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      RabbitMQ__Host: host.docker.internal
+      RabbitMQ__Usuario: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Interno__ApiKey: ${INVENTORY_INTERNAL_API_KEY}
+      Inventario__MinutosReserva: "15"
+      Inventario__SegundosRevisionExpiracion: "60"
+    restart: unless-stopped
+
+  cart-api:
+    build:
+      context: ./Cart_BACK
+      dockerfile: Dockerfile
+    container_name: cart-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Redis: "host.docker.internal:6379,abortConnect=false,connectTimeout=2000,syncTimeout=2000"
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      Servicios__CatalogoUrl: "http://catalog-api:8080/"
+      Servicios__InventarioUrl: "http://inventory-api:8080/"
+      Carrito__MaxProductos: "50"
+      Carrito__MaxUnidadesPorProducto: "10"
+      Carrito__DiasExpiracion: "30"
+      RabbitMQ__Host: host.docker.internal
+      RabbitMQ__Usuario: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+    depends_on:
+      - catalog-api
+      - inventory-api
+    restart: unless-stopped
+
+  orders-api:
+    build:
+      context: ./Orders_BACK
+      dockerfile: Dockerfile
+    container_name: orders-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SQLConnectionString: "Server=host.docker.internal,1433;Database=EcommerceOrdersDB;User Id=${ORDERS_DB_USER};Password=${ORDERS_DB_PASSWORD};TrustServerCertificate=True;"
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      RabbitMQ__Host: host.docker.internal
+      RabbitMQ__Usuario: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Servicios__CarritoUrl: "http://cart-api:8080/"
+      Servicios__InventarioUrl: "http://inventory-api:8080/"
+      Servicios__PagosUrl: "http://payments-api:8080/"
+      Interno__InventarioApiKey: ${INVENTORY_INTERNAL_API_KEY}
+      Interno__PagosApiKey: ${PAYMENTS_INTERNAL_API_KEY}
+      Pedidos__EnvioGratisDesde: "150000"
+      Pedidos__CostoEnvio: "12000"
+      Pedidos__MinutosParaPagar: "15"
+      Pedidos__SegundosRevisionExpiracion: "60"
+    depends_on:
+      - cart-api
+      - inventory-api
+      - payments-api
+    restart: unless-stopped
+
+  payments-api:
+    build:
+      context: ./Payments_BACK
+      dockerfile: Dockerfile
+    container_name: payments-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SQLConnectionString: "Server=host.docker.internal,1433;Database=EcommercePaymentsDB;User Id=${PAYMENTS_DB_USER};Password=${PAYMENTS_DB_PASSWORD};TrustServerCertificate=True;"
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      RabbitMQ__Host: host.docker.internal
+      RabbitMQ__Usuario: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Interno__ApiKey: ${PAYMENTS_INTERNAL_API_KEY}
+      Simulador__TasaAprobacion: "0.8"
+      Simulador__SegundosMinimos: "2"
+      Simulador__SegundosMaximos: "8"
+    restart: unless-stopped
+
+volumes:
+  catalog-imagenes:

@@ -1,0 +1,177 @@
+@use 'tema' as *;
+
+.pantalla-auth {
+  display: grid;
+  min-height: calc(100vh - 4.5rem);
+
+  @include desde(lg) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.panel-marca {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  padding: 4rem;
+  background:
+    radial-gradient(circle at 20% 80%, rgba($acento, 0.4), transparent 45%),
+    linear-gradient(150deg, $primario-oscuro, $primario 60%, #6366f1);
+  color: $superficie;
+
+  @include desde(lg) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  h2 {
+    max-width: 26rem;
+    margin-bottom: 1rem;
+    color: $superficie;
+    font-size: 2.25rem;
+    line-height: 1.15;
+  }
+
+  p {
+    max-width: 26rem;
+    opacity: 0.85;
+  }
+
+  ul {
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+    font-weight: 500;
+
+    i {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: $radio-sm;
+      background: rgba($superficie, 0.15);
+    }
+  }
+}
+
+.zona-formulario {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.25rem;
+}
+
+.formulario {
+  width: 100%;
+  max-width: 26rem;
+
+  h1 {
+    margin-bottom: 0.35rem;
+    font-size: 1.85rem;
+  }
+
+  .subtitulo {
+    margin-bottom: 2rem;
+    color: $texto-suave;
+  }
+}
+
+.form-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.campo-con-icono {
+  position: relative;
+
+  > .bi {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $texto-tenue;
+    pointer-events: none;
+  }
+
+  .form-control {
+    padding-left: 2.6rem;
+  }
+
+  .ver-clave {
+    position: absolute;
+    right: 0.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.35rem 0.55rem;
+    border: 0;
+    background: transparent;
+    color: $texto-suave;
+
+    &:hover {
+      color: $primario;
+    }
+  }
+}
+
+.btn-enviar {
+  width: 100%;
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+}
+
+.pie-formulario {
+  margin-top: 1.5rem;
+  color: $texto-suave;
+  text-align: center;
+
+  a {
+    font-weight: 600;
+  }
+}
+
+.cuentas-demo {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px dashed $borde;
+  border-radius: $radio-lg;
+
+  .titulo {
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  button {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid $borde;
+    border-radius: $radio;
+    background: $superficie;
+    font-size: 0.85rem;
+    text-align: left;
+    transition: border-color $transicion, background $transicion;
+
+    &:hover {
+      border-color: $primario;
+      background: $primario-claro;
+    }
+
+    span {
+      color: $texto-suave;
+    }
+  }
+}

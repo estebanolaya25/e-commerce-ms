@@ -1,0 +1,120 @@
+@use 'tema' as *;
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid $borde;
+  border-radius: $radio-lg;
+  background: $superficie;
+  color: $texto;
+  transition: transform $transicion, box-shadow $transicion, border-color $transicion;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba($primario, 0.3);
+    box-shadow: $sombra-media;
+
+    img {
+      transform: scale(1.04);
+    }
+  }
+}
+
+.imagen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: $fondo;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  > .bi {
+    color: $texto-tenue;
+    font-size: 2.5rem;
+  }
+}
+
+.insignias {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.insignia {
+  padding: 0.2rem 0.55rem;
+  border-radius: $radio-pildora;
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  &.descuento {
+    background: $acento;
+    color: $superficie;
+  }
+
+  &.destacado {
+    margin-left: auto;
+    background: $superficie;
+    color: #f59e0b;
+    box-shadow: $sombra-suave;
+  }
+}
+
+.cuerpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.1rem 1.2rem;
+}
+
+.marca {
+  color: $texto-suave;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.nombre {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.precios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.precio {
+  color: $texto;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.antes {
+  color: $texto-tenue;
+  font-size: 0.85rem;
+  text-decoration: line-through;
+}

@@ -1,0 +1,71 @@
+@use 'tema' as *;
+
+.pasos {
+  display: flex;
+  justify-content: space-between;
+  max-width: 40rem;
+  margin: 0 auto 2.5rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+
+li {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: $texto-tenue;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  &:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background: $borde;
+    z-index: 0;
+  }
+
+  &.hecho::before,
+  &.actual::before {
+    background: $primario;
+  }
+}
+
+.numero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid $borde;
+  border-radius: 50%;
+  background: $superficie;
+}
+
+.hecho {
+  color: $primario;
+
+  .numero {
+    border-color: $primario;
+    background: $primario;
+    color: $superficie;
+  }
+}
+
+.actual {
+  color: $texto;
+
+  .numero {
+    border-color: $primario;
+    color: $primario;
+    box-shadow: 0 0 0 4px rgba($primario, 0.12);
+  }
+}

@@ -1,0 +1,31 @@
+@use 'tema' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.contenido {
+  flex: 1;
+  outline: none;
+}
+
+// Invisible hasta que el usuario llega con Tab: permite saltar la navbar con el teclado.
+.saltar-contenido {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 1200;
+  padding: 0.6rem 1rem;
+  border-radius: $radio;
+  background: $primario;
+  color: $superficie;
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform $transicion;
+
+  &:focus {
+    transform: translateY(0);
+  }
+}

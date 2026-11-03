@@ -1,0 +1,72 @@
+<header class="encabezado">
+  <div>
+    <h1>Catálogo</h1>
+    <span class="texto-suave" *ngIf="resultado">{{ resultado.total }} {{ resultado.total === 1 ? 'producto' : 'productos' }}, incluidos los inactivos</span>
+  </div>
+  <a class="btn btn-primary" routerLink="/admin/catalogo/nuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo producto</a>
+</header>
+
+<app-pestanas-catalogo activa="productos"></app-pestanas-catalogo>
+
+<div class="filtros superficie">
+  <form class="buscar" role="search" (submit)="$event.preventDefault(); filtrar({ buscar: campoBuscar.value })">
+    <i class="bi bi-search"></i>
+    <input #campoBuscar class="form-control" [value]="buscar" placeholder="Buscar por nombre o descripción" aria-label="Buscar productos">
+  </form>
+  <select class="form-select" [value]="categoria" (change)="filtrar({ categoria: $any($event.target).value })" aria-label="Filtrar por categoría">
+    <option value="">Todas las categorías</option>
+    <option *ngFor="let c of categorias" [value]="c.categoria.slug" [selected]="c.categoria.slug === categoria">{{ sangria(c.nivel) }}{{ c.categoria.nombre }}</option>
+  </select>
+  <select class="form-select" [value]="marca" (change)="filtrar({ marca: $any($event.target).value })" aria-label="Filtrar por marca">
+    <option value="">Todas las marcas</option>
+    <option *ngFor="let m of marcas" [value]="m.slug" [selected]="m.slug === marca">{{ m.nombre }}</option>
+  </select>
+  <button class="btn btn-link" type="button" *ngIf="hayFiltros" (click)="limpiar()">Limpiar</button>
+</div>
+
+<div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+<div class="superficie tabla">
+  <table class="table align-middle mb-0">
+    <thead>
+      <tr><th>Producto</th><th>Categoría</th><th>Marca</th><th class="text-end">Precio desde</th><th class="text-center">Activo</th><th></th></tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="cargando">
+        <tr *ngFor="let i of [1, 2, 3, 4, 5]"><td colspan="6"><div class="esqueleto"></div></td></tr>
+      </ng-container>
+      <ng-container *ngIf="!cargando && resultado">
+        <tr *ngFor="let p of resultado.items" class="fila" [class.apagada]="!p.activo">
+          <td>
+            <div class="producto">
+              <img *ngIf="p.imagenUrl; else sinImagen" [src]="p.imagenUrl" [alt]="p.imagenTextoAlternativo ?? p.nombre" loading="lazy">
+              <ng-template #sinImagen><span class="sin-imagen" title="Sin imágenes"><i class="bi bi-image"></i></span></ng-template>
+              <div>
+                <a class="nombre" [routerLink]="['/admin/catalogo', p.id]">{{ p.nombre }}</a>
+                <small class="texto-suave d-block">
+                  {{ p.slug }}
+                  <span class="destacado" *ngIf="p.destacado"><i class="bi bi-star-fill"></i> Destacado</span>
+                </small>
+              </div>
+            </div>
+          </td>
+          <td>{{ p.categoria }}</td>
+          <td>{{ p.marca ?? '—' }}</td>
+          <td class="text-end fw-semibold">{{ p.precioDesde | cop }}</td>
+          <td class="text-center">
+            <div class="form-check form-switch d-inline-block m-0">
+              <input class="form-check-input" type="checkbox" role="switch" [checked]="p.activo" [disabled]="cambiando.has(p.id)"
+                     (change)="cambiarEstado(p, $event)" [attr.aria-label]="'Activo: ' + p.nombre">
+            </div>
+          </td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" [routerLink]="['/admin/catalogo', p.id]">Editar</a></td>
+        </tr>
+        <tr *ngIf="resultado.items.length === 0">
+          <td colspan="6" class="vacio">No hay productos con estos filtros.</td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>
+
+<app-paginador *ngIf="resultado" [pagina]="resultado.pagina" [totalPaginas]="resultado.totalPaginas" (cambiar)="irAPagina($event)"></app-paginador>

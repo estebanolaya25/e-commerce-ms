@@ -1,0 +1,286 @@
+@use 'tema' as *;
+
+.pago {
+  padding-top: 2rem;
+}
+
+.contenido {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+
+  @include desde(lg) {
+    grid-template-columns: 1fr 23rem;
+  }
+}
+
+.panel {
+  padding: 2rem;
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin-bottom: 0.25rem;
+    font-size: 1.6rem;
+  }
+}
+
+.reloj {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: $radio-pildora;
+  background: $primario-claro;
+  color: $primario;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+
+  &.urgente {
+    background: $peligro-claro;
+    color: $peligro;
+  }
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.campo-tarjeta {
+  position: relative;
+
+  .form-control {
+    padding-right: 6.5rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+  }
+
+  .marca {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    padding: 0.15rem 0.5rem;
+    border-radius: $radio-sm;
+    background: $primario-claro;
+    color: $primario;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+}
+
+.tarjetas-prueba {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+  padding: 1rem;
+  border: 1px dashed $borde;
+  border-radius: $radio-lg;
+
+  .titulo {
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  button {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid $borde;
+    border-radius: $radio;
+    background: $superficie;
+    font-size: 0.85rem;
+
+    &:hover {
+      border-color: $primario;
+      background: $primario-claro;
+    }
+
+    code {
+      color: $texto;
+    }
+  }
+
+  .aprobada { color: $exito; font-weight: 600; }
+  .rechazada { color: $peligro; font-weight: 600; }
+  .aleatoria { color: $advertencia; font-weight: 600; }
+}
+
+.estado {
+  padding: 2.5rem 1rem;
+  text-align: center;
+
+  h1 {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 1.5rem;
+  }
+
+  .spinner-border {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-width: 0.3rem;
+  }
+
+  .icono {
+    display: inline-grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    font-size: 1.8rem;
+
+    &.advertencia {
+      background: $advertencia-claro;
+      color: $advertencia;
+    }
+
+    &.peligro {
+      background: $peligro-claro;
+      color: $peligro;
+    }
+  }
+}
+
+.envio-a {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  padding: 0.85rem;
+  border-radius: $radio;
+  background: $fondo;
+  color: $texto-suave;
+  font-size: 0.85rem;
+
+  i {
+    color: $primario;
+  }
+}
+
+.resumen {
+  padding: 1.5rem;
+
+  @include desde(lg) {
+    position: sticky;
+    top: 5.5rem;
+  }
+
+  h2 {
+    margin-bottom: 1.25rem;
+    font-size: 1.15rem;
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid $borde;
+  }
+
+  dt {
+    color: $texto-suave;
+    font-weight: 400;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .total {
+    padding-top: 0.6rem;
+    border-top: 1px solid $borde;
+    color: $texto;
+    font-size: 1.15rem;
+    font-weight: 800;
+  }
+
+  .nota {
+    margin: 1.25rem 0 0;
+    color: $texto-suave;
+    font-size: 0.8rem;
+  }
+}
+
+.items {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  small {
+    display: block;
+    color: $texto-suave;
+  }
+}
+
+.miniatura {
+  position: relative;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: $radio-sm;
+  background: $fondo;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+  }
+
+  .cantidad {
+    position: absolute;
+    top: -0.4rem;
+    right: -0.4rem;
+    display: grid;
+    place-items: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3rem;
+    border-radius: $radio-pildora;
+    background: $texto-suave;
+    color: $superficie;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+}
+
+.esqueleto {
+  height: 18rem;
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+
+  &.alto {
+    height: 28rem;
+  }
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

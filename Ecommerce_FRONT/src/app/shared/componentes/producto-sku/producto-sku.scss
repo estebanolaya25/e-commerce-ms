@@ -1,0 +1,54 @@
+@use 'tema' as *;
+
+.producto-sku {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+
+  img,
+  .sin-imagen {
+    flex-shrink: 0;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: $radio-sm;
+    object-fit: cover;
+    background: $fondo;
+  }
+
+  .sin-imagen {
+    display: grid;
+    place-items: center;
+    border: 1px dashed $borde;
+    color: $texto-tenue;
+  }
+
+  .texto {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .nombre {
+    font-weight: 600;
+  }
+
+  small {
+    color: $texto-suave;
+  }
+
+  &.grande {
+    gap: 1rem;
+
+    img,
+    .sin-imagen {
+      width: 4rem;
+      height: 4rem;
+      border-radius: $radio;
+    }
+
+    .nombre {
+      font-size: 1.05rem;
+    }
+  }
+}

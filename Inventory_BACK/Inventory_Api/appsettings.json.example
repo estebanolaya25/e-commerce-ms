@@ -1,0 +1,32 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "MassTransit": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SQLConnectionString": "Server=localhost,1433;Database=EcommerceInventoryDB;User Id=Ecommerce-inventory;Password=REEMPLAZAR;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Issuer": "ecommerce-auth",
+    "Audience": "ecommerce-api",
+    "Key": "REEMPLAZAR_CON_LA_MISMA_CLAVE_DE_AUTH_API"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Puerto": "5672",
+    "VirtualHost": "/",
+    "Usuario": "guest",
+    "Password": "guest"
+  },
+  "Interno": {
+    "ApiKey": "REEMPLAZAR_CON_UNA_CLAVE_DE_AL_MENOS_32_CARACTERES"
+  },
+  "Inventario": {
+    "MinutosReserva": "15",
+    "SegundosRevisionExpiracion": "60"
+  }
+}

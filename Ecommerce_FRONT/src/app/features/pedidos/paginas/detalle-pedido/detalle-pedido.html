@@ -1,0 +1,99 @@
+<section class="container detalle-pedido">
+  <a class="volver" routerLink="/pedidos"><i class="bi bi-arrow-left me-1"></i>Mis pedidos</a>
+
+  <div class="esqueleto" *ngIf="cargando"></div>
+
+  <div class="vacio superficie" *ngIf="noEncontrado">
+    <i class="bi bi-receipt-cutoff"></i>
+    <h1>No encontramos este pedido</h1>
+    <a class="btn btn-primary" routerLink="/pedidos">Ver mis pedidos</a>
+  </div>
+
+  <ng-container *ngIf="pedido as p">
+    <header class="cabecera">
+      <div>
+        <h1>{{ p.numero }}</h1>
+        <span class="texto-suave">Realizado el {{ fecha(p.createdAt) | date: "d 'de' MMMM 'de' y, h:mm a" }}</span>
+      </div>
+      <app-estado-pedido [estado]="p.estado"></app-estado-pedido>
+    </header>
+
+    <!-- Pendiente: pagar o cancelar -->
+    <div class="aviso-pago superficie" *ngIf="p.estado === 'PendientePago'">
+      <div>
+        <strong *ngIf="puedePagar">Tiene {{ restante }} para pagar este pedido</strong>
+        <strong *ngIf="!puedePagar">El tiempo para pagar terminó</strong>
+        <span class="texto-suave" *ngIf="p.ultimoErrorPago">Último intento rechazado: {{ p.ultimoErrorPago }}</span>
+        <span class="texto-suave" *ngIf="!p.ultimoErrorPago">El stock está reservado para usted mientras tanto.</span>
+      </div>
+      <div class="acciones">
+        <button class="btn btn-outline-danger" type="button" *ngIf="puedeCancelar && !confirmandoCancelacion" (click)="confirmandoCancelacion = true">
+          Cancelar pedido
+        </button>
+        <a class="btn btn-primary" *ngIf="puedePagar" [routerLink]="['/checkout/pago', p.pedidoId]"><i class="bi bi-credit-card me-2"></i>Pagar ahora</a>
+      </div>
+    </div>
+
+    <div class="confirmar superficie" *ngIf="confirmandoCancelacion">
+      <span><i class="bi bi-exclamation-triangle me-2"></i>¿Seguro que quiere cancelar el pedido {{ p.numero }}? Las unidades se liberarán.</span>
+      <div class="acciones">
+        <button class="btn btn-light" type="button" (click)="confirmandoCancelacion = false" [disabled]="cancelando">No, volver</button>
+        <button class="btn btn-danger" type="button" (click)="cancelar()" [disabled]="cancelando">
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="cancelando"></span>Sí, cancelar
+        </button>
+      </div>
+    </div>
+
+    <div class="aviso-pago superficie procesando" *ngIf="p.estado === 'PagoEnProceso'">
+      <span class="spinner-border spinner-border-sm text-primary"></span>
+      <strong>Estamos confirmando su pago. Recargue en unos segundos.</strong>
+    </div>
+
+    <!-- Progreso del despacho -->
+    <div class="despacho superficie" *ngIf="etapaActual >= 0">
+      <div class="etapa" *ngFor="let etapa of etapas; let i = index" [class.hecha]="i <= etapaActual" [class.actual]="i === etapaActual">
+        <span class="icono"><i class="bi" [ngClass]="etapa.icono"></i></span>
+        <span>{{ etapa.texto }}</span>
+      </div>
+    </div>
+
+    <div class="contenido">
+      <div class="columna">
+        <section class="superficie bloque">
+          <h2>Productos</h2>
+          <ul class="items">
+            <li *ngFor="let item of p.items">
+              <span class="miniatura"><img *ngIf="item.imagenUrl" [src]="item.imagenUrl" [alt]="item.nombre"></span>
+              <span class="nombre">
+                {{ item.nombre }}
+                <small>{{ opcionesTexto(item.opciones) }} · {{ item.cantidad }} × {{ item.precioUnitario | cop }}</small>
+              </span>
+              <strong>{{ item.subtotal | cop }}</strong>
+            </li>
+          </ul>
+          <dl class="totales">
+            <dt>Subtotal</dt><dd>{{ p.subtotal | cop }}</dd>
+            <dt>Envío</dt><dd>{{ p.costoEnvio === 0 ? 'Gratis' : (p.costoEnvio | cop) }}</dd>
+            <dt class="total">Total</dt><dd class="total">{{ p.total | cop }}</dd>
+          </dl>
+        </section>
+
+        <section class="superficie bloque">
+          <h2>Envío</h2>
+          <p class="direccion">
+            <strong>{{ p.direccion.nombreDestinatario }}</strong><br>
+            {{ p.direccion.direccion }}<br>
+            {{ p.direccion.ciudad }}, {{ p.direccion.departamento }}<br>
+            <span class="texto-suave">{{ p.direccion.telefono }}</span>
+            <ng-container *ngIf="p.direccion.notas"><br><span class="texto-suave">{{ p.direccion.notas }}</span></ng-container>
+          </p>
+        </section>
+      </div>
+
+      <section class="superficie bloque historial">
+        <h2>Seguimiento</h2>
+        <app-linea-tiempo-pedido [historial]="p.historial"></app-linea-tiempo-pedido>
+      </section>
+    </div>
+  </ng-container>
+</section>

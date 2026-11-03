@@ -1,0 +1,13 @@
+<a class="saltar-contenido" href="#contenido" (click)="irAlContenido($event)">Saltar al contenido</a>
+<app-barra-carga></app-barra-carga>
+<app-navbar></app-navbar>
+
+<main id="contenido" class="contenido" tabindex="-1">
+  <router-outlet></router-outlet>
+</main>
+
+<app-pie-pagina></app-pie-pagina>
+<app-avisos></app-avisos>
+
+<!-- Anuncia a los lectores de pantalla la página a la que se llegó al navegar. -->
+<div class="visually-hidden" aria-live="polite">{{ anuncio }}</div>

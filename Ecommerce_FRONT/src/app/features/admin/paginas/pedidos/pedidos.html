@@ -1,0 +1,48 @@
+<header class="encabezado">
+  <div>
+    <h1>Pedidos</h1>
+    <span class="texto-suave" *ngIf="resultado">{{ resultado.total }} {{ resultado.total === 1 ? 'pedido' : 'pedidos' }}{{ soloBodega ? ' pagados, listos para despachar o ya despachados' : '' }}</span>
+  </div>
+</header>
+
+<div class="filtros superficie">
+  <form class="buscar" role="search" (submit)="$event.preventDefault(); buscarNumero(campoNumero.value)">
+    <i class="bi bi-search"></i>
+    <input #campoNumero class="form-control" [value]="numero" placeholder="Número exacto, p. ej. PED-2026-000042" aria-label="Buscar por número">
+  </form>
+  <select class="form-select" [ngModel]="estado" (ngModelChange)="filtrarEstado($event)" aria-label="Filtrar por estado">
+    <option value="">Todos los estados</option>
+    <option *ngFor="let e of estados" [value]="e.valor">{{ e.texto }}</option>
+  </select>
+  <button class="btn btn-link" type="button" *ngIf="estado || numero" (click)="limpiar()">Limpiar</button>
+</div>
+
+<div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+<div class="superficie tabla">
+  <table class="table align-middle mb-0">
+    <thead>
+      <tr><th>Número</th><th>Fecha</th><th>Estado</th><th class="text-center">Productos</th><th class="text-end">Total</th><th></th></tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="cargando">
+        <tr *ngFor="let i of [1, 2, 3, 4, 5]"><td colspan="6"><div class="esqueleto"></div></td></tr>
+      </ng-container>
+      <ng-container *ngIf="!cargando && resultado">
+        <tr *ngFor="let p of resultado.items" class="fila">
+          <td><a class="numero" [routerLink]="['/admin/pedidos', p.pedidoId]">{{ p.numero }}</a></td>
+          <td class="texto-suave">{{ fecha(p.createdAt) | date: 'd MMM y, h:mm a' }}</td>
+          <td><app-estado-pedido [estado]="p.estado"></app-estado-pedido></td>
+          <td class="text-center">{{ p.unidades }}</td>
+          <td class="text-end fw-semibold">{{ p.total | cop }}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" [routerLink]="['/admin/pedidos', p.pedidoId]">Ver</a></td>
+        </tr>
+        <tr *ngIf="resultado.items.length === 0">
+          <td colspan="6" class="vacio">No hay pedidos con estos filtros.</td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>
+
+<app-paginador *ngIf="resultado" [pagina]="resultado.pagina" [totalPaginas]="resultado.totalPaginas" (cambiar)="irAPagina($event)"></app-paginador>

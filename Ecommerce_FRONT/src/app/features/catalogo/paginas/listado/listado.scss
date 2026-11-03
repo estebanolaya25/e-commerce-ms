@@ -1,0 +1,197 @@
+@use 'tema' as *;
+
+.listado {
+  padding-top: 1.5rem;
+}
+
+.migas {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: $texto-suave;
+  font-size: 0.85rem;
+
+  i {
+    font-size: 0.7rem;
+  }
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+  }
+}
+
+.acciones {
+  display: flex;
+  gap: 0.5rem;
+
+  .orden {
+    min-width: 11rem;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.4rem 0.3rem 0.8rem;
+  border-radius: $radio-pildora;
+  background: $primario-claro;
+  color: $primario;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+
+    &:hover {
+      background: rgba($primario, 0.15);
+    }
+  }
+}
+
+.contenido {
+  display: grid;
+  gap: 2rem;
+
+  @include desde(lg) {
+    grid-template-columns: 15.5rem 1fr;
+  }
+}
+
+.filtros {
+  @include desde(lg) {
+    position: sticky;
+    top: 5.5rem;
+    align-self: start;
+  }
+
+  .offcanvas-body {
+    display: flex;
+    gap: 1.75rem;
+
+    @include desde(lg) {
+      padding: 0;
+    }
+  }
+}
+
+.grupo {
+  h6 {
+    margin-bottom: 0.65rem;
+    color: $texto-suave;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+.opcion {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  border: 0;
+  border-radius: $radio-sm;
+  background: transparent;
+  color: $texto;
+  font-size: 0.92rem;
+  text-align: left;
+  transition: background $transicion, color $transicion;
+
+  &:hover {
+    background: $fondo;
+  }
+
+  &.padre {
+    margin-top: 0.35rem;
+    font-weight: 600;
+  }
+
+  &.hija {
+    padding-left: 1.4rem;
+    color: $texto-suave;
+  }
+
+  &.activa {
+    background: $primario-claro;
+    color: $primario;
+    font-weight: 600;
+  }
+}
+
+.rango {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  .form-control {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+  }
+}
+
+.rejilla {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, 1fr);
+
+  @include desde(md) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.vacio {
+  padding: 4rem 1.5rem;
+  text-align: center;
+
+  > .bi {
+    color: $texto-tenue;
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    margin: 1rem 0 0.5rem;
+    font-size: 1.35rem;
+  }
+}
+
+.esqueleto {
+  aspect-ratio: 3 / 4;
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

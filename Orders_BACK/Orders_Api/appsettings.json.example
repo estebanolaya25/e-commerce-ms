@@ -1,0 +1,42 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "System.Net.Http.HttpClient": "Warning",
+      "Polly": "Warning",
+      "MassTransit": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SQLConnectionString": "Server=localhost,1433;Database=EcommerceOrdersDB;User Id=Ecommerce-orders;Password=REEMPLAZAR;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Issuer": "ecommerce-auth",
+    "Audience": "ecommerce-api",
+    "Key": "REEMPLAZAR_CON_LA_MISMA_CLAVE_DE_AUTH_API"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Puerto": "5672",
+    "VirtualHost": "/",
+    "Usuario": "guest",
+    "Password": "guest"
+  },
+  "Servicios": {
+    "CarritoUrl": "http://localhost:5104/",
+    "InventarioUrl": "http://localhost:5103/",
+    "PagosUrl": "http://localhost:5106/"
+  },
+  "Interno": {
+    "InventarioApiKey": "REEMPLAZAR_CON_INVENTORY_INTERNAL_API_KEY",
+    "PagosApiKey": "REEMPLAZAR_CON_PAYMENTS_INTERNAL_API_KEY"
+  },
+  "Pedidos": {
+    "EnvioGratisDesde": "150000",
+    "CostoEnvio": "12000",
+    "MinutosParaPagar": "15",
+    "SegundosRevisionExpiracion": "60"
+  }
+}

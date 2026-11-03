@@ -1,0 +1,116 @@
+<section class="container detalle">
+  <div class="cuadricula" *ngIf="cargando">
+    <div class="esqueleto galeria-esqueleto"></div>
+    <div>
+      <div class="esqueleto linea w-50"></div>
+      <div class="esqueleto linea w-75 alta"></div>
+      <div class="esqueleto linea w-25"></div>
+    </div>
+  </div>
+
+  <div class="vacio superficie" *ngIf="noEncontrado">
+    <i class="bi bi-box-seam"></i>
+    <h1>Este producto no está disponible</h1>
+    <p class="texto-suave">Puede que ya no se venda o que el enlace esté mal escrito.</p>
+    <a class="btn btn-primary" routerLink="/productos">Ver otros productos</a>
+  </div>
+
+  <ng-container *ngIf="producto as p">
+    <nav class="migas" aria-label="Ruta">
+      <a routerLink="/">Inicio</a><i class="bi bi-chevron-right"></i>
+      <a routerLink="/productos" [queryParams]="{ categoria: p.categoriaSlug }">{{ p.categoria }}</a><i class="bi bi-chevron-right"></i>
+      <span>{{ p.nombre }}</span>
+    </nav>
+
+    <div class="cuadricula">
+      <!-- Galería -->
+      <div class="galeria">
+        <div class="principal">
+          <img *ngIf="imagenActual; else sinImagen" [src]="imagenActual.url" [alt]="imagenActual.textoAlternativo ?? p.nombre">
+          <ng-template #sinImagen><i class="bi bi-image"></i></ng-template>
+          <span class="insignia" *ngIf="descuento">-{{ descuento }}%</span>
+        </div>
+        <div class="miniaturas" *ngIf="p.imagenes.length > 1">
+          <button type="button" *ngFor="let imagen of p.imagenes" [class.activa]="imagen.id === imagenActual?.id"
+                  (click)="imagenActual = imagen" [attr.aria-label]="imagen.textoAlternativo">
+            <img [src]="imagen.url" [alt]="imagen.textoAlternativo ?? ''">
+          </button>
+        </div>
+      </div>
+
+      <!-- Información y compra -->
+      <div class="info">
+        <a class="marca" *ngIf="p.marca" routerLink="/productos" [queryParams]="{ marca: p.marcaSlug }">{{ p.marca }}</a>
+        <h1>{{ p.nombre }}</h1>
+        <p class="texto-suave" *ngIf="p.descripcionCorta">{{ p.descripcionCorta }}</p>
+
+        <div class="precios" *ngIf="variante as v">
+          <span class="precio">{{ v.precio | cop }}</span>
+          <span class="antes" *ngIf="descuento">{{ v.precioAntes | cop }}</span>
+          <span class="ahorro" *ngIf="descuento">Ahorra {{ (v.precioAntes! - v.precio) | cop }}</span>
+        </div>
+
+        <div class="opciones" *ngFor="let clave of claves">
+          <div class="titulo-opcion">
+            {{ etiqueta(clave) }}: <strong>{{ seleccion[clave] }}</strong>
+          </div>
+          <div class="valores">
+            <button type="button" class="valor" *ngFor="let valor of valores[clave]"
+                    [class.elegido]="seleccion[clave] === valor"
+                    [class.atenuado]="!combinable(clave, valor)"
+                    [class.agotado]="agotado(clave, valor)"
+                    (click)="elegir(clave, valor)">
+              {{ valor }}
+            </button>
+          </div>
+        </div>
+
+        <div class="estado-stock" *ngIf="variante">
+          <ng-container *ngIf="stock === null">
+            <span class="consultando"><span class="spinner-border spinner-border-sm"></span> Consultando disponibilidad…</span>
+          </ng-container>
+          <ng-container *ngIf="stockVariante as s">
+            <span class="agotado" *ngIf="s.agotado"><i class="bi bi-x-circle-fill"></i> Agotado</span>
+            <span class="pocas" *ngIf="!s.agotado && s.pocasUnidades"><i class="bi bi-exclamation-circle-fill"></i> ¡Solo quedan {{ s.disponible }}!</span>
+            <span class="disponible" *ngIf="!s.agotado && !s.pocasUnidades"><i class="bi bi-check-circle-fill"></i> Disponible ({{ s.disponible }} unidades)</span>
+          </ng-container>
+          <span class="sku">SKU {{ variante.sku }}</span>
+        </div>
+
+        <div class="compra">
+          <div class="cantidad" aria-label="Cantidad">
+            <button type="button" (click)="cambiarCantidad(-1)" [disabled]="cantidad <= 1" aria-label="Menos"><i class="bi bi-dash"></i></button>
+            <span>{{ cantidad }}</span>
+            <button type="button" (click)="cambiarCantidad(1)" [disabled]="cantidad >= maximoCantidad" aria-label="Más"><i class="bi bi-plus"></i></button>
+          </div>
+          <button class="btn btn-primary btn-lg flex-grow-1" type="button" (click)="agregarAlCarrito()"
+                  [disabled]="agregando || !variante || stockVariante?.agotado">
+            <span class="spinner-border spinner-border-sm me-2" *ngIf="agregando"></span>
+            <i class="bi bi-bag-plus me-2" *ngIf="!agregando"></i>{{ stockVariante?.agotado ? 'Agotado' : 'Agregar al carrito' }}
+          </button>
+        </div>
+
+        <ul class="garantias">
+          <li><i class="bi bi-truck"></i>Envío gratis desde $150.000</li>
+          <li><i class="bi bi-shield-check"></i>Pago seguro con tarjeta</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="descripcion superficie" *ngIf="p.descripcion || atributos.length">
+      <div *ngIf="p.descripcion">
+        <h2>Descripción</h2>
+        <p>{{ p.descripcion }}</p>
+      </div>
+      <div *ngIf="atributos.length">
+        <h2>Ficha técnica</h2>
+        <dl>
+          <ng-container *ngFor="let atributo of atributos">
+            <dt>{{ etiqueta(atributo[0]) }}</dt>
+            <dd>{{ atributo[1] }}</dd>
+          </ng-container>
+        </dl>
+      </div>
+    </div>
+  </ng-container>
+</section>

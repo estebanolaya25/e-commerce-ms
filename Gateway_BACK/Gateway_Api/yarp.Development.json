@@ -1,0 +1,12 @@
+{
+  "ReverseProxy": {
+    "Routes": {
+      "auth-swagger": {
+        "ClusterId": "auth",
+        "Match": {
+          "Path": "/swagger/{**resto}"
+        }
+      }
+    }
+  }
+}

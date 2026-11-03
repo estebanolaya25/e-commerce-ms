@@ -1,0 +1,23 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SQLConnectionString": "Server=.\\SQLEXPRESS;Database=EcommerceAuthDB;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Issuer": "ecommerce-auth",
+    "Audience": "ecommerce-api",
+    "Key": "REEMPLAZAR_CON_CLAVE_SECRETA_DE_AL_MENOS_32_CARACTERES",
+    "JWT_EXPIRE_MINUTES": "15",
+    "RefreshTokenDays": "7"
+  },
+  "Seguridad": {
+    "MaxIntentosFallidos": "5",
+    "MinutosBloqueo": "15"
+  }
+}

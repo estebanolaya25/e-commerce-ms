@@ -1,0 +1,23 @@
+[
+  {
+    "Name": "Todos los microservicios",
+    "Projects": [
+      { "Path": "Gateway_BACK\\Gateway_Api\\Gateway_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Auth_BACK\\Auth_Api\\Auth_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Catalog_BACK\\Catalog_Api\\Catalog_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Inventory_BACK\\Inventory_Api\\Inventory_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Cart_BACK\\Cart_Api\\Cart_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Orders_BACK\\Orders_Api\\Orders_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Payments_BACK\\Payments_Api\\Payments_Api.csproj", "Action": "Start", "DebugTarget": "http" }
+    ]
+  },
+  {
+    "Name": "Navegar la tienda (Gateway + Auth + Catálogo + Inventario)",
+    "Projects": [
+      { "Path": "Gateway_BACK\\Gateway_Api\\Gateway_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Auth_BACK\\Auth_Api\\Auth_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Catalog_BACK\\Catalog_Api\\Catalog_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Inventory_BACK\\Inventory_Api\\Inventory_Api.csproj", "Action": "Start", "DebugTarget": "http" }
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+@use 'tema' as *;
+
+.linea-tiempo {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.2rem 1fr;
+    gap: 0.85rem;
+    padding-bottom: 1.35rem;
+    opacity: 0.75;
+
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      top: 2.2rem;
+      bottom: 0;
+      left: 1.05rem;
+      width: 2px;
+      background: $borde;
+    }
+
+    &.reciente {
+      opacity: 1;
+    }
+  }
+
+  strong,
+  .motivo,
+  time {
+    display: block;
+  }
+
+  .motivo {
+    color: $texto-suave;
+    font-size: 0.85rem;
+  }
+
+  time {
+    margin-top: 0.15rem;
+    color: $texto-tenue;
+    font-size: 0.78rem;
+  }
+}
+
+.punto {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  font-size: 0.95rem;
+
+  &.advertencia { background: $advertencia-claro; color: $advertencia; }
+  &.info { background: #e0f2fe; color: #0369a1; }
+  &.primario { background: $primario-claro; color: $primario; }
+  &.exito { background: $exito-claro; color: $exito; }
+  &.neutro { background: $fondo; color: $texto-suave; }
+}

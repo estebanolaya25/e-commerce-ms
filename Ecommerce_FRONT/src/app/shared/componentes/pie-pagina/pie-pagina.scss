@@ -1,0 +1,14 @@
+@use 'tema' as *;
+
+.pie {
+  margin-top: 4rem;
+  padding: 1.75rem 0;
+  border-top: 1px solid $borde;
+  background: $superficie;
+  color: $texto-suave;
+  font-size: 0.875rem;
+}
+
+.tecnologias i {
+  color: $primario;
+}

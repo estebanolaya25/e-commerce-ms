@@ -1,0 +1,183 @@
+{
+  "ReverseProxy": {
+    "Routes": {
+      "auth": {
+        "ClusterId": "auth",
+        "RateLimiterPolicy": "auth",
+        "Match": {
+          "Path": "/api/auth/{**resto}"
+        }
+      },
+      "auth-usuarios": {
+        "ClusterId": "auth",
+        "AuthorizationPolicy": "autenticado",
+        "RateLimiterPolicy": "administracion",
+        "Match": {
+          "Path": "/api/auth/usuarios/{**resto}"
+        }
+      },
+      "auth-roles": {
+        "ClusterId": "auth",
+        "AuthorizationPolicy": "autenticado",
+        "RateLimiterPolicy": "administracion",
+        "Match": {
+          "Path": "/api/auth/roles"
+        }
+      },
+      "catalogo": {
+        "ClusterId": "catalogo",
+        "RateLimiterPolicy": "catalogo",
+        "Match": {
+          "Path": "/api/catalogo/{**resto}"
+        }
+      },
+      "inventario": {
+        "ClusterId": "inventario",
+        "RateLimiterPolicy": "inventario",
+        "Match": {
+          "Path": "/api/inventario/{**resto}"
+        }
+      },
+      "carrito": {
+        "ClusterId": "carrito",
+        "AuthorizationPolicy": "autenticado",
+        "RateLimiterPolicy": "carrito",
+        "Match": {
+          "Path": "/api/carrito/{**resto}"
+        }
+      },
+      "carrito-swagger": {
+        "ClusterId": "carrito",
+        "Match": {
+          "Path": "/api/carrito/swagger/{**resto}"
+        }
+      },
+      "pedidos": {
+        "ClusterId": "pedidos",
+        "AuthorizationPolicy": "autenticado",
+        "RateLimiterPolicy": "pedidos",
+        "Match": {
+          "Path": "/api/pedidos/{**resto}"
+        }
+      },
+      "pedidos-swagger": {
+        "ClusterId": "pedidos",
+        "Match": {
+          "Path": "/api/pedidos/swagger/{**resto}"
+        }
+      },
+      "pagos": {
+        "ClusterId": "pagos",
+        "AuthorizationPolicy": "autenticado",
+        "RateLimiterPolicy": "pagos",
+        "Match": {
+          "Path": "/api/pagos/{**resto}"
+        }
+      },
+      "pagos-swagger": {
+        "ClusterId": "pagos",
+        "Match": {
+          "Path": "/api/pagos/swagger/{**resto}"
+        }
+      }
+    },
+    "Clusters": {
+      "auth": {
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:10",
+            "Timeout": "00:00:05",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          }
+        },
+        "Destinations": {
+          "auth1": {
+            "Address": "http://localhost:5101/"
+          }
+        }
+      },
+      "catalogo": {
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:10",
+            "Timeout": "00:00:05",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          }
+        },
+        "Destinations": {
+          "catalogo1": {
+            "Address": "http://localhost:5102/"
+          }
+        }
+      },
+      "inventario": {
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:10",
+            "Timeout": "00:00:05",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          }
+        },
+        "Destinations": {
+          "inventario1": {
+            "Address": "http://localhost:5103/"
+          }
+        }
+      },
+      "carrito": {
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:10",
+            "Timeout": "00:00:05",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          }
+        },
+        "Destinations": {
+          "carrito1": {
+            "Address": "http://localhost:5104/"
+          }
+        }
+      },
+      "pedidos": {
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:10",
+            "Timeout": "00:00:05",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          }
+        },
+        "Destinations": {
+          "pedidos1": {
+            "Address": "http://localhost:5105/"
+          }
+        }
+      },
+      "pagos": {
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:10",
+            "Timeout": "00:00:05",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          }
+        },
+        "Destinations": {
+          "pagos1": {
+            "Address": "http://localhost:5106/"
+          }
+        }
+      }
+    }
+  }
+}

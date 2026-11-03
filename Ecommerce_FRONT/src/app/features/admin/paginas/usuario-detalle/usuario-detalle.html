@@ -1,0 +1,85 @@
+<a class="volver" routerLink="/admin/usuarios"><i class="bi bi-arrow-left me-1"></i>Usuarios</a>
+
+<div class="esqueleto" *ngIf="cargando"></div>
+<div class="alert alert-warning" *ngIf="noEncontrado">No se encontró el usuario.</div>
+
+<ng-container *ngIf="usuario as u">
+  <header class="encabezado">
+    <div class="persona">
+      <span class="avatar">{{ u.nombre.charAt(0) }}{{ u.apellido.charAt(0) }}</span>
+      <div>
+        <h1>{{ u.nombre }} {{ u.apellido }} <small class="yo" *ngIf="esYo">(usted)</small></h1>
+        <span class="texto-suave">{{ u.email }}</span>
+      </div>
+    </div>
+    <div class="insignias">
+      <span class="estado" [class.inactivo]="!u.activo">{{ u.activo ? 'Activo' : 'Inactivo' }}</span>
+      <span class="estado bloqueado" *ngIf="u.bloqueadoHasta"><i class="bi bi-lock-fill"></i> Bloqueado</span>
+    </div>
+  </header>
+
+  <div class="contenido">
+    <div class="columna">
+      <!-- Roles -->
+      <section class="superficie bloque">
+        <h2>Roles</h2>
+        <p class="texto-suave ayuda">Un usuario puede tener varios. Los cambios se aplican cuando renueve su sesión (en pocos minutos).</p>
+        <div class="opciones-rol">
+          <label class="opcion" *ngFor="let r of roles" [class.marcada]="seleccion.has(r.nombre)" [class.deshabilitada]="bloqueadoRol(r.nombre)">
+            <input class="form-check-input" type="checkbox" [checked]="seleccion.has(r.nombre)" [disabled]="bloqueadoRol(r.nombre) || guardandoRoles"
+                   (change)="alternarRol(r.nombre)" [attr.aria-label]="nombresRol[r.nombre] ?? r.nombre">
+            <div>
+              <strong>{{ nombresRol[r.nombre] ?? r.nombre }}</strong>
+              <small class="d-block texto-suave">{{ r.descripcion }}</small>
+              <small class="d-block aviso-rol" *ngIf="bloqueadoRol(r.nombre)">No puede quitarse su propio rol de administrador.</small>
+            </div>
+          </label>
+        </div>
+        <div class="text-danger pequeno mt-2" *ngIf="seleccion.size === 0">Asigne al menos un rol.</div>
+        <div class="acciones">
+          <button class="btn btn-link" type="button" *ngIf="rolesCambiaron" (click)="deshacerRoles()">Deshacer</button>
+          <button class="btn btn-primary" type="button" (click)="guardarRoles()" [disabled]="!rolesCambiaron || seleccion.size === 0 || guardandoRoles">
+            <span class="spinner-border spinner-border-sm me-2" *ngIf="guardandoRoles"></span>Guardar roles
+          </button>
+        </div>
+      </section>
+
+      <!-- Cuenta -->
+      <section class="superficie bloque">
+        <h2>Cuenta</h2>
+        <dl class="datos">
+          <dt>Creada</dt><dd>{{ fecha(u.createdAt) | date: "d 'de' MMMM 'de' y" }}</dd>
+          <dt>Último acceso</dt><dd>{{ u.ultimoAcceso ? (fecha(u.ultimoAcceso) | date: 'd MMM y, h:mm a') : 'Nunca ha iniciado sesión' }}</dd>
+          <dt>Intentos fallidos</dt><dd>{{ u.intentosFallidos }}</dd>
+          <ng-container *ngIf="u.bloqueadoHasta"><dt>Bloqueada hasta</dt><dd class="text-danger">{{ fecha(u.bloqueadoHasta) | date: 'h:mm:ss a' }}</dd></ng-container>
+        </dl>
+        <div class="botones-cuenta">
+          <button class="btn btn-outline-primary" type="button" *ngIf="u.bloqueadoHasta" (click)="desbloquear()" [disabled]="ocupado">
+            <i class="bi bi-unlock me-1"></i>Desbloquear
+          </button>
+          <button class="btn" type="button" [ngClass]="u.activo ? 'btn-outline-danger' : 'btn-outline-success'" (click)="cambiarEstado()" [disabled]="ocupado || (esYo && u.activo)">
+            <i class="bi me-1" [ngClass]="u.activo ? 'bi-person-x' : 'bi-person-check'"></i>{{ u.activo ? 'Desactivar cuenta' : 'Activar cuenta' }}
+          </button>
+        </div>
+        <small class="texto-suave d-block mt-2" *ngIf="esYo">No puede desactivar su propia cuenta.</small>
+        <small class="texto-suave d-block mt-2" *ngIf="!esYo && u.activo">Al desactivarla se cierran sus sesiones abiertas. Los usuarios no se eliminan porque sus pedidos los referencian.</small>
+      </section>
+    </div>
+
+    <!-- Actividad -->
+    <section class="superficie bloque">
+      <h2>Actividad reciente</h2>
+      <ol class="actividad" *ngIf="u.actividad.length; else sinActividad">
+        <li *ngFor="let e of u.actividad">
+          <span class="icono" [ngClass]="evento(e).clase"><i class="bi" [ngClass]="evento(e).icono"></i></span>
+          <div>
+            <strong>{{ evento(e).texto }}</strong>
+            <span class="detalle" *ngIf="e.detalle">{{ e.detalle }}</span>
+            <time>{{ fecha(e.fecha) | date: 'd MMM y, h:mm:ss a' }}<ng-container *ngIf="e.ip"> · {{ e.ip }}</ng-container></time>
+          </div>
+        </li>
+      </ol>
+      <ng-template #sinActividad><p class="texto-suave mb-0">Sin actividad registrada.</p></ng-template>
+    </section>
+  </div>
+</ng-container>

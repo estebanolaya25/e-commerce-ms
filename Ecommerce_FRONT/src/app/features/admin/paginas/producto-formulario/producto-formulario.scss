@@ -1,0 +1,236 @@
+@use 'tema' as *;
+@use 'admin' as *;
+
+.volver {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.encabezado {
+  @include encabezado-admin;
+}
+
+.acciones-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.estado {
+  @include insignia-activo;
+}
+
+.contenido {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.bloque {
+  min-width: 0;
+  padding: 1.25rem 1.5rem;
+
+  h2 {
+    @include titulo-bloque;
+  }
+}
+
+.pequeno {
+  font-size: 0.85rem;
+}
+
+.atributo {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr auto;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-icono {
+  border: 0;
+  color: $texto-suave;
+
+  &:hover {
+    color: $peligro;
+  }
+}
+
+.pie-formulario {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid $borde;
+}
+
+.opciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.4rem 0.2rem 0.75rem;
+  border-radius: $radio-pildora;
+  background: $primario-claro;
+  color: $primario;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  button {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+  }
+}
+
+.nueva-opcion {
+  display: flex;
+  gap: 0.4rem;
+
+  .form-control {
+    width: 10rem;
+  }
+}
+
+.tabla-variantes {
+  overflow-x: auto;
+
+  th {
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    white-space: nowrap;
+  }
+
+  .sku {
+    min-width: 11rem;
+    text-transform: uppercase;
+  }
+
+  .form-control-sm {
+    min-width: 6rem;
+  }
+
+  .precio {
+    min-width: 7.5rem;
+    text-align: right;
+  }
+
+  .editando td {
+    border-bottom-color: transparent;
+  }
+
+  .error-fila td {
+    padding-top: 0;
+    color: $peligro;
+    font-size: 0.8rem;
+  }
+
+  .fila.apagada td:not(:last-child):not(:nth-last-child(2)) {
+    opacity: 0.5;
+  }
+
+  .acciones-fila {
+    width: 1%;
+  }
+}
+
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.imagen {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border: 2px solid $borde;
+  border-radius: $radio;
+  background: $fondo;
+  aspect-ratio: 1;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &.principal {
+    border-color: $primario;
+  }
+
+  &.ocupada {
+    opacity: 0.5;
+  }
+
+  figcaption {
+    position: absolute;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    left: 0.4rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3rem;
+
+    .btn {
+      padding: 0.2rem 0.5rem;
+      font-size: 0.75rem;
+      box-shadow: $sombra-suave;
+    }
+  }
+}
+
+.marca-principal {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: $radio-pildora;
+  background: $primario;
+  color: $superficie;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.subir {
+  display: grid;
+  gap: 0.6rem;
+
+  @include desde(md) {
+    grid-template-columns: 1.3fr 1fr auto;
+  }
+}
+
+.pie-crear {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid $borde;
+  background: $fondo;
+}
+
+.esqueleto {
+  @include esqueleto;
+  height: 24rem;
+}

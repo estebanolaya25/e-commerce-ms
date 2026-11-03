@@ -1,0 +1,68 @@
+<header class="encabezado">
+  <div>
+    <h1>Usuarios</h1>
+    <span class="texto-suave" *ngIf="resultado">{{ resultado.total }} {{ resultado.total === 1 ? 'usuario' : 'usuarios' }}{{ hayFiltros ? ' con estos filtros' : '' }}</span>
+  </div>
+  <a class="btn btn-primary" routerLink="/admin/usuarios/nuevo"><i class="bi bi-person-plus me-1"></i>Nuevo usuario del personal</a>
+</header>
+
+<div class="roles" role="tablist" aria-label="Filtrar por rol">
+  <button type="button" class="chip" [class.activo]="!rol" (click)="filtrar({ rol: '' })">Todos</button>
+  <button type="button" class="chip" *ngFor="let r of roles" [class.activo]="rol === r.nombre" [title]="r.descripcion ?? ''" (click)="filtrar({ rol: r.nombre })">
+    {{ nombresRol[r.nombre] ?? r.nombre }} <span class="cuenta">{{ r.usuarios }}</span>
+  </button>
+</div>
+
+<div class="filtros superficie">
+  <form class="buscar" role="search" (submit)="$event.preventDefault(); filtrar({ buscar: campoBuscar.value })">
+    <i class="bi bi-search"></i>
+    <input #campoBuscar class="form-control" [value]="buscar" placeholder="Nombre o correo" aria-label="Buscar usuarios">
+  </form>
+  <select class="form-select" [value]="estado" (change)="filtrar({ estado: $any($event.target).value })" aria-label="Filtrar por estado">
+    <option value="">Activos e inactivos</option>
+    <option value="activos" [selected]="estado === 'activos'">Solo activos</option>
+    <option value="inactivos" [selected]="estado === 'inactivos'">Solo inactivos</option>
+  </select>
+  <button class="btn btn-link" type="button" *ngIf="hayFiltros" (click)="limpiar()">Limpiar</button>
+</div>
+
+<div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+<div class="superficie tabla">
+  <table class="table align-middle mb-0">
+    <thead>
+      <tr><th>Usuario</th><th>Roles</th><th>Estado</th><th>Último acceso</th><th>Creado</th><th></th></tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="cargando">
+        <tr *ngFor="let i of [1, 2, 3, 4, 5]"><td colspan="6"><div class="esqueleto"></div></td></tr>
+      </ng-container>
+      <ng-container *ngIf="!cargando && resultado">
+        <tr *ngFor="let u of resultado.items" class="fila" [class.apagada]="!u.activo">
+          <td>
+            <div class="persona">
+              <span class="avatar">{{ iniciales(u) }}</span>
+              <div>
+                <a class="nombre" [routerLink]="['/admin/usuarios', u.userId]">{{ u.nombre }} {{ u.apellido }}</a>
+                <small class="d-block texto-suave">{{ u.email }}</small>
+              </div>
+            </div>
+          </td>
+          <td><span class="lista-roles"><app-insignia-rol *ngFor="let r of u.roles" [rol]="r"></app-insignia-rol><span class="texto-suave" *ngIf="!u.roles.length">Sin roles</span></span></td>
+          <td>
+            <span class="estado" [class.inactivo]="!u.activo">{{ u.activo ? 'Activo' : 'Inactivo' }}</span>
+            <span class="estado bloqueado" *ngIf="u.bloqueadoHasta" [title]="'Hasta ' + (fecha(u.bloqueadoHasta) | date: 'h:mm a')"><i class="bi bi-lock-fill"></i> Bloqueado</span>
+          </td>
+          <td class="texto-suave">{{ u.ultimoAcceso ? (fecha(u.ultimoAcceso) | date: 'd MMM, h:mm a') : 'Nunca' }}</td>
+          <td class="texto-suave">{{ fecha(u.createdAt) | date: 'd MMM y' }}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" [routerLink]="['/admin/usuarios', u.userId]">Gestionar</a></td>
+        </tr>
+        <tr *ngIf="resultado.items.length === 0">
+          <td colspan="6" class="vacio">No hay usuarios con estos filtros.</td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>
+
+<app-paginador *ngIf="resultado" [pagina]="resultado.pagina" [totalPaginas]="resultado.totalPaginas" (cambiar)="irAPagina($event)"></app-paginador>

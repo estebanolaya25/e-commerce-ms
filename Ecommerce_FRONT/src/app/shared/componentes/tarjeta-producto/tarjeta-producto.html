@@ -1,0 +1,21 @@
+<a class="tarjeta" [routerLink]="['/producto', producto.slug]">
+  <div class="imagen">
+    <img *ngIf="producto.imagenUrl; else sinImagen" [src]="producto.imagenUrl"
+         [alt]="producto.imagenTextoAlternativo ?? producto.nombre" loading="lazy">
+    <ng-template #sinImagen><i class="bi bi-image"></i></ng-template>
+
+    <div class="insignias">
+      <span class="insignia descuento" *ngIf="descuento">-{{ descuento }}%</span>
+      <span class="insignia destacado" *ngIf="producto.destacado"><i class="bi bi-star-fill"></i></span>
+    </div>
+  </div>
+
+  <div class="cuerpo">
+    <span class="marca">{{ producto.marca ?? producto.categoria }}</span>
+    <h3 class="nombre">{{ producto.nombre }}</h3>
+    <div class="precios">
+      <span class="precio">{{ producto.precioDesde | cop }}</span>
+      <span class="antes" *ngIf="descuento">{{ producto.precioAntes | cop }}</span>
+    </div>
+  </div>
+</a>

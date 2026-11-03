@@ -1,0 +1,34 @@
+**/appsettings.json
+
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.suo
+*.rsuser
+
+node_modules/
+dist/
+.angular/
+
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+.claude/
+
+.env
+
+**/Catalog_Api/imagenes/
+Semillas/salida/
+
+# App móvil: tiene su propio repositorio.
+ecommerce_mobile/
+
+# Guías y planes personales: solo para uso local.
+GUIA_*.md
+PLAN_*.md

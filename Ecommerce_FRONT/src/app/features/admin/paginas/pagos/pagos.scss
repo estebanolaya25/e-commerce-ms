@@ -1,0 +1,119 @@
+@use 'tema' as *;
+@use 'admin' as *;
+
+.encabezado {
+  @include encabezado-admin;
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  @include desde(md) {
+    grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+  }
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.9rem 1.1rem;
+
+  &:first-child {
+    grid-column: 1 / -1;
+    border-color: $primario;
+    background: $primario-claro;
+
+    @include desde(md) {
+      grid-column: auto;
+    }
+
+    strong {
+      color: $primario;
+    }
+  }
+
+  span {
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  strong {
+    font-size: 1.6rem;
+    line-height: 1.15;
+
+    &.exito { color: $exito; }
+    &.peligro { color: $peligro; }
+    &.info { color: #0369a1; }
+    &.neutro { color: $texto-suave; }
+  }
+
+  small {
+    font-size: 0.75rem;
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+
+  .form-select {
+    width: auto;
+    min-width: 12rem;
+  }
+}
+
+.buscar {
+  position: relative;
+  flex: 1;
+  min-width: 15rem;
+
+  i {
+    position: absolute;
+    top: 50%;
+    left: 0.85rem;
+    transform: translateY(-50%);
+    color: $texto-tenue;
+  }
+
+  .form-control {
+    padding-left: 2.4rem;
+  }
+}
+
+.filtro-pedido a {
+  font-weight: 600;
+}
+
+.tabla {
+  @include tabla-admin;
+
+  .tarjeta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+  }
+
+  .resultado {
+    min-width: 12rem;
+    white-space: normal;
+  }
+
+  .motivo {
+    color: $peligro;
+    font-size: 0.9rem;
+  }
+}
+
+.esqueleto {
+  @include esqueleto;
+  height: 2.4rem;
+}

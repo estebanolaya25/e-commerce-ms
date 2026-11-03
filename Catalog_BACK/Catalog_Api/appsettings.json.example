@@ -1,0 +1,36 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "MassTransit": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "PostgresConnectionString": "Host=localhost;Port=5432;Database=ecommerce_catalog;Username=catalog_app;Password=REEMPLAZAR",
+    "Redis": "localhost:6379,abortConnect=false,connectTimeout=2000,syncTimeout=2000"
+  },
+  "Jwt": {
+    "Issuer": "ecommerce-auth",
+    "Audience": "ecommerce-api",
+    "Key": "REEMPLAZAR_CON_LA_MISMA_CLAVE_DE_AUTH_API"
+  },
+  "Cache": {
+    "MinutosListado": "5",
+    "MinutosDetalle": "30"
+  },
+  "Imagenes": {
+    "RutaFisica": "imagenes",
+    "UrlBase": "/api/catalogo/imagenes",
+    "TamanoMaximoMB": "5",
+    "MaximoPorProducto": "10"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Puerto": "5672",
+    "VirtualHost": "/",
+    "Usuario": "guest",
+    "Password": "guest"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "MassTransit": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "SQLConnectionString": "Server=localhost,1433;Database=EcommercePaymentsDB;User Id=Ecommerce-payments;Password=REEMPLAZAR;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Issuer": "ecommerce-auth",
+    "Audience": "ecommerce-api",
+    "Key": "REEMPLAZAR_CON_LA_MISMA_CLAVE_DE_AUTH_API"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Puerto": "5672",
+    "VirtualHost": "/",
+    "Usuario": "guest",
+    "Password": "guest"
+  },
+  "Interno": {
+    "ApiKey": "REEMPLAZAR_CON_PAYMENTS_INTERNAL_API_KEY"
+  },
+  "Simulador": {
+    "TasaAprobacion": "0.8",
+    "SegundosMinimos": "2",
+    "SegundosMaximos": "8"
+  }
+}

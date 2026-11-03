@@ -1,0 +1,82 @@
+@use 'tema' as *;
+
+.encabezado {
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+
+  .form-select {
+    width: auto;
+    min-width: 12rem;
+  }
+}
+
+.buscar {
+  position: relative;
+  flex: 1;
+  min-width: 15rem;
+
+  i {
+    position: absolute;
+    top: 50%;
+    left: 0.85rem;
+    transform: translateY(-50%);
+    color: $texto-tenue;
+  }
+
+  .form-control {
+    padding-left: 2.4rem;
+  }
+}
+
+.tabla {
+  overflow-x: auto;
+  padding: 0.25rem 1rem;
+
+  th {
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    white-space: nowrap;
+  }
+
+  .numero {
+    font-weight: 600;
+  }
+
+  .vacio {
+    padding: 2.5rem;
+    color: $texto-suave;
+    text-align: center;
+  }
+}
+
+.esqueleto {
+  height: 1.6rem;
+  border-radius: $radio-sm;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

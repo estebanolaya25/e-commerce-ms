@@ -1,0 +1,213 @@
+@use 'tema' as *;
+@use 'admin' as *;
+
+.volver {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.encabezado {
+  @include encabezado-admin;
+
+  h1 {
+    font-size: 1.6rem;
+  }
+
+  .yo {
+    color: $texto-tenue;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+
+  > div {
+    min-width: 0;
+  }
+
+  h1,
+  .texto-suave {
+    overflow-wrap: anywhere;
+  }
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: $primario;
+  color: $superficie;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.insignias {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.estado {
+  @include insignia-activo;
+
+  &.bloqueado {
+    background: $peligro-claro;
+    color: $peligro;
+  }
+}
+
+.contenido {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+
+  @include desde(xl) {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+}
+
+.columna {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.bloque {
+  min-width: 0;
+  padding: 1.25rem 1.5rem;
+
+  h2 {
+    @include titulo-bloque;
+  }
+}
+
+.ayuda,
+.pequeno {
+  font-size: 0.85rem;
+}
+
+.opciones-rol {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid $borde;
+  border-radius: $radio;
+  cursor: pointer;
+  transition: border-color $transicion, background $transicion;
+
+  .form-check-input {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+  }
+
+  &.marcada {
+    border-color: $primario;
+    background: $primario-claro;
+  }
+
+  &.deshabilitada {
+    cursor: not-allowed;
+  }
+
+  .aviso-rol {
+    color: $primario;
+    font-weight: 600;
+  }
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1.25rem;
+  margin-bottom: 1.25rem;
+
+  dt {
+    color: $texto-suave;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.botones-cuenta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.actividad {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.75rem;
+    padding: 0.65rem 0;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $borde;
+    }
+  }
+
+  strong,
+  .detalle,
+  time {
+    display: block;
+  }
+
+  .detalle {
+    color: $texto-suave;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+
+  time {
+    color: $texto-tenue;
+    font-size: 0.78rem;
+  }
+
+  .icono {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+
+    &.exito { background: $exito-claro; color: $exito; }
+    &.peligro { background: $peligro-claro; color: $peligro; }
+    &.info { background: #e0f2fe; color: #0369a1; }
+    &.primario { background: $primario-claro; color: $primario; }
+    &.neutro { background: $fondo; color: $texto-suave; }
+  }
+}
+
+.esqueleto {
+  @include esqueleto;
+  height: 22rem;
+}

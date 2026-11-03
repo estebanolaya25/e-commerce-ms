@@ -1,0 +1,39 @@
+@Gateway = http://localhost:5100
+@Inventario = http://localhost:5103
+@TokenBodega = PEGAR_ACCESS_TOKEN_DE_WAREHOUSE_O_ADMIN
+@ApiKeyInterna = PEGAR_INVENTORY_INTERNAL_API_KEY_DEL_ENV
+
+### Público (lo usará Carrito)
+GET {{Gateway}}/api/inventario/disponibilidad?skus=P00002-AZUL-M,P02509-MOST
+
+### Bodega
+GET {{Gateway}}/api/inventario/stock?soloBajoMinimo=true
+Authorization: Bearer {{TokenBodega}}
+
+###
+POST {{Gateway}}/api/inventario/stock/P02509-MOST/entradas
+Authorization: Bearer {{TokenBodega}}
+Content-Type: application/json
+
+{
+  "cantidad": 20,
+  "motivo": "Llegada de proveedor"
+}
+
+### Interno (solo con Inventario corriendo en local: el gateway no publica /internal)
+POST {{Inventario}}/internal/inventario/reservas
+X-Api-Key: {{ApiKeyInterna}}
+Content-Type: application/json
+
+{
+  "pedidoId": "11111111-1111-1111-1111-111111111111",
+  "items": [
+    { "sku": "P00002-AZUL-M", "cantidad": 2 }
+  ]
+}
+
+###
+POST {{Inventario}}/internal/inventario/reservas/11111111-1111-1111-1111-111111111111/confirmar
+X-Api-Key: {{ApiKeyInterna}}
+
+###

@@ -1,0 +1,109 @@
+@use 'tema' as *;
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: calc(100vh - 4.5rem);
+
+  @include desde(lg) {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+}
+
+.lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem 1rem;
+  border-right: 1px solid $borde;
+  background: $superficie;
+
+  @include hasta(lg) {
+    border-right: 0;
+    border-bottom: 1px solid $borde;
+  }
+}
+
+.perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 0.5rem;
+
+  .etiqueta {
+    color: $texto-tenue;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .rol {
+    padding: 0.1rem 0.5rem;
+    border-radius: $radio-pildora;
+    background: $primario-claro;
+    color: $primario;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  @include hasta(lg) {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
+
+.enlace {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: $radio;
+  color: $texto-suave;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background $transicion, color $transicion;
+
+  &:hover {
+    background: $fondo;
+    color: $texto;
+  }
+
+  &.activo {
+    background: $primario-claro;
+    color: $primario;
+    font-weight: 600;
+  }
+}
+
+.volver {
+  margin-top: auto;
+  padding: 0 0.75rem;
+  color: $texto-suave;
+  font-size: 0.9rem;
+
+  @include hasta(lg) {
+    display: none;
+  }
+}
+
+.area {
+  min-width: 0;
+  padding: 2rem 1.25rem;
+
+  @include desde(lg) {
+    padding: 2rem 2.5rem;
+  }
+}

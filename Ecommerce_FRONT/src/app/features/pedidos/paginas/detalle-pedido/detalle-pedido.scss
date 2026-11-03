@@ -1,0 +1,242 @@
+@use 'tema' as *;
+
+.detalle-pedido {
+  max-width: 68rem;
+  padding-top: 1.5rem;
+}
+
+.volver {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 3vw, 2rem);
+  }
+}
+
+.aviso-pago,
+.confirmar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid $advertencia;
+
+  > div:first-child {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  &.procesando {
+    justify-content: flex-start;
+    border-left-color: $primario;
+  }
+
+  .acciones {
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+.confirmar {
+  border-left-color: $peligro;
+  background: $peligro-claro;
+}
+
+.despacho {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 0.5rem;
+}
+
+.etapa {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  color: $texto-tenue;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+
+  &:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: 1.15rem;
+    right: 50%;
+    width: 100%;
+    height: 3px;
+    background: $borde;
+  }
+
+  .icono {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    border-radius: 50%;
+    background: $fondo;
+    border: 2px solid $borde;
+    font-size: 1rem;
+  }
+
+  &.hecha {
+    color: $primario;
+
+    &::before {
+      background: $primario;
+    }
+
+    .icono {
+      border-color: $primario;
+      background: $primario;
+      color: $superficie;
+    }
+  }
+
+  &.actual .icono {
+    box-shadow: 0 0 0 5px rgba($primario, 0.15);
+  }
+}
+
+.contenido {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+
+  @include desde(lg) {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+
+.columna {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.bloque {
+  padding: 1.5rem;
+
+  h2 {
+    margin-bottom: 1rem;
+    color: $texto-suave;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+.items {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 3.5rem 1fr auto;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  small {
+    display: block;
+    color: $texto-suave;
+  }
+}
+
+.miniatura {
+  width: 3.5rem;
+  height: 3.5rem;
+  overflow: hidden;
+  border-radius: $radio-sm;
+  background: $fondo;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.totales {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  margin: 1.25rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid $borde;
+
+  dt {
+    color: $texto-suave;
+    font-weight: 400;
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+  }
+
+  .total {
+    color: $texto;
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+}
+
+.direccion {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.vacio {
+  max-width: 30rem;
+  margin: 2rem auto;
+  padding: 3rem 2rem;
+  text-align: center;
+
+  > .bi {
+    color: $texto-tenue;
+    font-size: 2.5rem;
+  }
+
+  h1 {
+    margin: 1rem 0 1.25rem;
+    font-size: 1.4rem;
+  }
+}
+
+.esqueleto {
+  height: 24rem;
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

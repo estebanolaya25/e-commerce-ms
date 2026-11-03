@@ -1,0 +1,64 @@
+<a class="volver" routerLink="/admin/usuarios"><i class="bi bi-arrow-left me-1"></i>Usuarios</a>
+
+<header class="encabezado">
+  <div>
+    <h1>Nuevo usuario del personal</h1>
+    <span class="texto-suave">Los clientes se registran solos en la tienda; aquí se crean cuentas de trabajo.</span>
+  </div>
+</header>
+
+<form class="contenido" [formGroup]="formulario" (ngSubmit)="crear()" novalidate>
+  <section class="superficie bloque">
+    <h2>Datos</h2>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="nombre">Nombre</label>
+        <input id="nombre" class="form-control" formControlName="nombre" maxlength="100" [class.is-invalid]="invalido('nombre')">
+        <div class="invalid-feedback">Escriba el nombre.</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="apellido">Apellido</label>
+        <input id="apellido" class="form-control" formControlName="apellido" maxlength="100" [class.is-invalid]="invalido('apellido')">
+        <div class="invalid-feedback">Escriba el apellido.</div>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="email">Correo</label>
+        <input id="email" class="form-control" type="email" formControlName="email" maxlength="254" autocomplete="off" [class.is-invalid]="invalido('email')">
+        <div class="invalid-feedback">Escriba un correo válido.</div>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="password">Contraseña temporal</label>
+        <div class="input-group has-validation">
+          <input id="password" class="form-control" [type]="verClave ? 'text' : 'password'" formControlName="password" maxlength="128" autocomplete="new-password" [class.is-invalid]="invalido('password')">
+          <button class="btn btn-outline-secondary" type="button" (click)="verClave = !verClave" [attr.aria-label]="verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+            <i class="bi" [ngClass]="verClave ? 'bi-eye-slash' : 'bi-eye'"></i>
+          </button>
+          <button class="btn btn-outline-primary" type="button" (click)="generarClave()">Generar</button>
+          <div class="invalid-feedback">Mínimo 8 caracteres, con mayúscula, minúscula y número.</div>
+        </div>
+        <small class="texto-suave">Compártala por un canal seguro. La persona puede cambiarla en "Mi cuenta".</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="superficie bloque">
+    <h2>Roles</h2>
+    <div class="opciones-rol">
+      <label class="opcion" *ngFor="let r of roles" [class.marcada]="seleccion.has(r.nombre)">
+        <input class="form-check-input" type="checkbox" [checked]="seleccion.has(r.nombre)" (change)="alternarRol(r.nombre)" [attr.aria-label]="nombresRol[r.nombre] ?? r.nombre">
+        <div>
+          <strong>{{ nombresRol[r.nombre] ?? r.nombre }}</strong>
+          <small class="d-block texto-suave">{{ r.descripcion }}</small>
+        </div>
+      </label>
+    </div>
+    <div class="text-danger pequeno mt-2" *ngIf="intento && seleccion.size === 0">Elija al menos un rol.</div>
+
+    <div class="acciones">
+      <a class="btn btn-link" routerLink="/admin/usuarios">Cancelar</a>
+      <button class="btn btn-primary" type="submit" [disabled]="guardando">
+        <span class="spinner-border spinner-border-sm me-2" *ngIf="guardando"></span>Crear usuario
+      </button>
+    </div>
+  </section>
+</form>

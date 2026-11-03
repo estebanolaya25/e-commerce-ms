@@ -1,0 +1,130 @@
+<section class="container pago">
+  <app-pasos [actual]="2"></app-pasos>
+
+  <div class="esqueleto" *ngIf="vista === 'cargando'"></div>
+
+  <div class="contenido" *ngIf="pedido && vista !== 'cargando'">
+    <div class="superficie panel">
+      <!-- Formulario de tarjeta -->
+      <ng-container *ngIf="vista === 'formulario'">
+        <div class="encabezado">
+          <div>
+            <h1>Pago con tarjeta</h1>
+            <p class="texto-suave">Pedido <strong>{{ pedido.numero }}</strong></p>
+          </div>
+          <span class="reloj" [class.urgente]="restante < '03:00'" title="Tiempo para pagar antes de liberar el stock">
+            <i class="bi bi-stopwatch"></i>{{ restante }}
+          </span>
+        </div>
+
+        <div class="alert alert-danger d-flex gap-2" *ngIf="rechazo">
+          <i class="bi bi-x-octagon"></i>
+          <span><strong>Pago rechazado:</strong> {{ rechazo }}. Intente con otra tarjeta.</span>
+        </div>
+        <div class="alert alert-danger d-flex gap-2" *ngIf="error">
+          <i class="bi bi-exclamation-triangle"></i><span>{{ error }}</span>
+        </div>
+
+        <form [formGroup]="formulario" (ngSubmit)="pagar()" novalidate>
+          <div class="mb-3">
+            <label class="form-label" for="numero">Número de tarjeta</label>
+            <div class="campo-tarjeta">
+              <input id="numero" class="form-control" formControlName="numero" inputmode="numeric" autocomplete="cc-number"
+                     placeholder="0000 0000 0000 0000" (input)="formatearNumero($event)" [class.is-invalid]="invalido('numero')">
+              <span class="marca" *ngIf="marca">{{ marca }}</span>
+            </div>
+            <div class="invalid-feedback d-block" *ngIf="invalido('numero')">El número de tarjeta no es válido.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="titular">Nombre como aparece en la tarjeta</label>
+            <input id="titular" class="form-control text-uppercase" formControlName="titular" autocomplete="cc-name"
+                   [class.is-invalid]="invalido('titular')">
+            <div class="invalid-feedback">Ingrese el nombre del titular.</div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-4">
+              <label class="form-label" for="mes">Mes</label>
+              <select id="mes" class="form-select" formControlName="mesVencimiento" [class.is-invalid]="vencida">
+                <option *ngFor="let m of meses" [ngValue]="m">{{ m < 10 ? '0' + m : m }}</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="form-label" for="anio">Año</label>
+              <select id="anio" class="form-select" formControlName="anioVencimiento" [class.is-invalid]="vencida">
+                <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="form-label" for="cvv">CVV</label>
+              <input id="cvv" class="form-control" formControlName="cvv" inputmode="numeric" maxlength="4" autocomplete="cc-csc"
+                     placeholder="123" [class.is-invalid]="invalido('cvv')">
+            </div>
+            <div class="col-12 invalid-feedback d-block mt-1" *ngIf="vencida">La tarjeta está vencida.</div>
+          </div>
+
+          <button class="btn btn-primary btn-lg w-100" type="submit" [disabled]="enviando">
+            <span class="spinner-border spinner-border-sm me-2" *ngIf="enviando"></span>
+            <i class="bi bi-lock-fill me-2" *ngIf="!enviando"></i>Pagar {{ pedido.total | cop }}
+          </button>
+        </form>
+
+        <div class="tarjetas-prueba">
+          <span class="titulo"><i class="bi bi-magic me-1"></i>Tarjetas de prueba (pasarela simulada)</span>
+          <button type="button" *ngFor="let t of tarjetasPrueba" (click)="usarTarjeta(t.numero)">
+            <code>{{ t.numero }}</code>
+            <span [ngClass]="t.clase">{{ t.resultado }}</span>
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- Esperando el resultado de Pagos -->
+      <div class="estado" *ngIf="vista === 'procesando'">
+        <div class="spinner-border text-primary" role="status"></div>
+        <h1>Procesando su pago…</h1>
+        <p class="texto-suave">La pasarela está validando la tarjeta. Esto toma unos segundos; no cierre esta página.</p>
+      </div>
+
+      <div class="estado" *ngIf="vista === 'demorado'">
+        <span class="icono advertencia"><i class="bi bi-hourglass-split"></i></span>
+        <h1>El pago está tardando más de lo normal</h1>
+        <p class="texto-suave">Le avisaremos el resultado en <strong>Mis pedidos</strong>. No vuelva a pagar para no duplicar el cobro.</p>
+        <a class="btn btn-primary" routerLink="/pedidos">Ir a mis pedidos</a>
+      </div>
+
+      <div class="estado" *ngIf="vista === 'cerrado'">
+        <span class="icono peligro"><i class="bi bi-clock-history"></i></span>
+        <h1>{{ pedido.estado === 'Cancelado' ? 'El pedido fue cancelado' : 'El tiempo para pagar terminó' }}</h1>
+        <p class="texto-suave">Las unidades reservadas volvieron al inventario. Puede volver a comprar desde el catálogo.</p>
+        <a class="btn btn-primary" routerLink="/productos">Volver al catálogo</a>
+      </div>
+    </div>
+
+    <aside class="superficie resumen">
+      <h2>Resumen del pedido</h2>
+      <ul class="items">
+        <li *ngFor="let item of pedido.items">
+          <span class="miniatura">
+            <img *ngIf="item.imagenUrl" [src]="item.imagenUrl" [alt]="item.nombre">
+            <span class="cantidad">{{ item.cantidad }}</span>
+          </span>
+          <span class="nombre">{{ item.nombre }}</span>
+          <strong>{{ item.subtotal | cop }}</strong>
+        </li>
+      </ul>
+      <dl>
+        <dt>Subtotal</dt>
+        <dd>{{ pedido.subtotal | cop }}</dd>
+        <dt>Envío</dt>
+        <dd>{{ pedido.costoEnvio === 0 ? 'Gratis' : (pedido.costoEnvio | cop) }}</dd>
+        <dt class="total">Total</dt>
+        <dd class="total">{{ pedido.total | cop }}</dd>
+      </dl>
+      <div class="envio-a">
+        <i class="bi bi-geo-alt"></i>
+        <span>{{ pedido.direccion.nombreDestinatario }}<br>{{ pedido.direccion.direccion }}, {{ pedido.direccion.ciudad }}</span>
+      </div>
+    </aside>
+  </div>
+</section>

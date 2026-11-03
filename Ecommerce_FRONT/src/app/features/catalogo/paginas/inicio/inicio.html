@@ -1,0 +1,63 @@
+<section class="hero">
+  <div class="container">
+    <div class="hero-contenido">
+      <span class="etiqueta"><i class="bi bi-stars me-1"></i>Nueva temporada</span>
+      <h1>Todo lo que necesitas,<br><span class="resaltado">en un solo lugar</span></h1>
+      <p>Moda, tecnología, hogar y deportes de marcas colombianas. Envío gratis en compras desde $150.000.</p>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-light btn-lg" routerLink="/productos">Ver todos los productos</a>
+        <a class="btn btn-outline-light btn-lg" href="#categorias">Explorar categorías</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container beneficios">
+  <div class="beneficio superficie">
+    <i class="bi bi-truck"></i>
+    <div><strong>Envío gratis</strong><span>Desde $150.000</span></div>
+  </div>
+  <div class="beneficio superficie">
+    <i class="bi bi-shield-check"></i>
+    <div><strong>Pago seguro</strong><span>Tarjetas de crédito y débito</span></div>
+  </div>
+  <div class="beneficio superficie">
+    <i class="bi bi-arrow-repeat"></i>
+    <div><strong>Stock en tiempo real</strong><span>Sabes lo que queda</span></div>
+  </div>
+</section>
+
+<section class="container seccion" id="categorias">
+  <div class="encabezado-seccion">
+    <h2>Compra por categoría</h2>
+    <a routerLink="/productos">Ver todo <i class="bi bi-arrow-right"></i></a>
+  </div>
+
+  <div class="rejilla-categorias" *ngIf="cargando">
+    <div class="tarjeta-categoria esqueleto" *ngFor="let i of [1, 2, 3, 4, 5, 6]"></div>
+  </div>
+
+  <div class="alert alert-danger d-flex align-items-center gap-2" *ngIf="error">
+    <i class="bi bi-wifi-off fs-4"></i>
+    <div>No se pudo conectar con el backend. Verifique que el gateway esté corriendo en <code>http://localhost:5100</code>.</div>
+  </div>
+
+  <div class="rejilla-categorias" *ngIf="!cargando && !error">
+    <a class="tarjeta-categoria superficie" *ngFor="let categoria of categorias"
+       routerLink="/productos" [queryParams]="{ categoria: categoria.slug }">
+      <span class="icono"><i class="bi" [ngClass]="icono(categoria)"></i></span>
+      <strong>{{ categoria.nombre }}</strong>
+      <span class="texto-suave">{{ categoria.hijas.length }} subcategorías</span>
+    </a>
+  </div>
+</section>
+
+<section class="container seccion" *ngIf="destacados.length">
+  <div class="encabezado-seccion">
+    <h2>Destacados de la semana</h2>
+    <a routerLink="/productos" [queryParams]="{ soloDestacados: true }">Ver destacados <i class="bi bi-arrow-right"></i></a>
+  </div>
+  <div class="rejilla-productos">
+    <app-tarjeta-producto *ngFor="let producto of destacados" [producto]="producto"></app-tarjeta-producto>
+  </div>
+</section>

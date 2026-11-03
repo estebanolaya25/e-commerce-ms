@@ -1,0 +1,190 @@
+<a class="volver" routerLink="/admin/catalogo"><i class="bi bi-arrow-left me-1"></i>Catálogo</a>
+
+<div class="esqueleto" *ngIf="cargando"></div>
+<div class="alert alert-warning" *ngIf="noEncontrado">No se encontró el producto.</div>
+
+<ng-container *ngIf="!cargando && !noEncontrado">
+  <header class="encabezado">
+    <div>
+      <h1>{{ esNuevo ? 'Nuevo producto' : producto?.nombre }}</h1>
+      <span class="texto-suave" *ngIf="esNuevo">Complete los datos y al menos una variante. Las imágenes se suben después de crearlo.</span>
+      <span class="texto-suave" *ngIf="producto">/producto/{{ producto.slug }}</span>
+    </div>
+    <div class="acciones-cabecera" *ngIf="producto as p">
+      <span class="estado" [class.inactivo]="!p.activo"><i class="bi" [ngClass]="p.activo ? 'bi-eye' : 'bi-eye-slash'"></i>{{ p.activo ? 'Visible en la tienda' : 'Oculto' }}</span>
+      <a class="btn btn-sm btn-outline-secondary" *ngIf="p.activo" [routerLink]="['/producto', p.slug]" target="_blank"><i class="bi bi-box-arrow-up-right me-1"></i>Ver en la tienda</a>
+      <button class="btn btn-sm" type="button" [ngClass]="p.activo ? 'btn-outline-danger' : 'btn-outline-success'" (click)="cambiarEstadoProducto()" [disabled]="cambiandoEstado">
+        {{ p.activo ? 'Desactivar' : 'Activar' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="contenido">
+    <!-- Información general -->
+    <form class="superficie bloque" [formGroup]="formulario" (ngSubmit)="guardar()" id="formularioProducto" novalidate>
+      <h2>Información general</h2>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="nombre">Nombre</label>
+          <input id="nombre" class="form-control" formControlName="nombre" maxlength="200" [class.is-invalid]="invalido('nombre')">
+          <div class="invalid-feedback">Escriba el nombre (máx. 200 caracteres).</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="precioBase">Precio base (COP)</label>
+          <input id="precioBase" class="form-control" type="number" min="0" step="100" formControlName="precioBase" [class.is-invalid]="invalido('precioBase')">
+          <div class="invalid-feedback">Debe ser un valor mayor o igual a 0.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="categoriaId">Categoría</label>
+          <select id="categoriaId" class="form-select" formControlName="categoriaId" [class.is-invalid]="invalido('categoriaId')">
+            <option value="" disabled>Seleccione…</option>
+            <option *ngFor="let c of categorias" [value]="c.categoria.id">{{ sangria(c.nivel) }}{{ c.categoria.nombre }}{{ c.categoria.activa ? '' : ' (inactiva)' }}</option>
+          </select>
+          <div class="invalid-feedback">Seleccione una categoría.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="marcaId">Marca <span class="texto-suave">(opcional)</span></label>
+          <select id="marcaId" class="form-select" formControlName="marcaId">
+            <option value="">Sin marca</option>
+            <option *ngFor="let m of marcas" [value]="m.id">{{ m.nombre }}{{ m.activa ? '' : ' (inactiva)' }}</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="slug">Slug <span class="texto-suave">(opcional, se genera del nombre)</span></label>
+          <input id="slug" class="form-control" formControlName="slug" maxlength="220" placeholder="p. ej. chaqueta-impermeable" [class.is-invalid]="invalido('slug')">
+          <div class="invalid-feedback">Solo minúsculas, números y guiones (por ejemplo camisa-azul-m).</div>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="descripcionCorta">Descripción corta</label>
+          <input id="descripcionCorta" class="form-control" formControlName="descripcionCorta" maxlength="500" placeholder="Se muestra en las tarjetas del listado">
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="descripcion">Descripción</label>
+          <textarea id="descripcion" class="form-control" rows="4" formControlName="descripcion" maxlength="10000"></textarea>
+        </div>
+        <div class="col-12">
+          <div class="form-check form-switch">
+            <input id="destacado" class="form-check-input" type="checkbox" role="switch" formControlName="destacado">
+            <label class="form-check-label" for="destacado">Destacado <span class="texto-suave">(aparece en la página de inicio)</span></label>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="mt-4">Ficha técnica</h2>
+      <div class="atributo" *ngFor="let a of atributos; let i = index">
+        <input class="form-control" [(ngModel)]="a.clave" [ngModelOptions]="{ standalone: true }" maxlength="50" placeholder="Nombre (p. ej. Material)" [attr.aria-label]="'Nombre del atributo ' + (i + 1)">
+        <input class="form-control" [(ngModel)]="a.valor" [ngModelOptions]="{ standalone: true }" maxlength="200" placeholder="Valor (p. ej. Algodón)" [attr.aria-label]="'Valor del atributo ' + (i + 1)">
+        <button class="btn btn-icono" type="button" (click)="quitarAtributo(i)" aria-label="Quitar atributo"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <p class="texto-suave pequeno" *ngIf="atributos.length === 0">Sin atributos. Son opcionales.</p>
+      <div class="text-danger pequeno mb-2" *ngIf="errorAtributos">{{ errorAtributos }}</div>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="agregarAtributo()"><i class="bi bi-plus-lg me-1"></i>Agregar atributo</button>
+
+      <div class="pie-formulario" *ngIf="!esNuevo">
+        <button class="btn btn-primary" type="submit" [disabled]="guardando">
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="guardando"></span>Guardar cambios
+        </button>
+      </div>
+    </form>
+
+    <!-- Variantes -->
+    <section class="superficie bloque">
+      <h2>Variantes</h2>
+      <div class="opciones">
+        <span class="texto-suave pequeno">Opciones:</span>
+        <span class="chip" *ngFor="let o of nombresOpciones">
+          {{ o }}
+          <button type="button" *ngIf="puedeQuitarOpcion(o)" (click)="quitarOpcion(o)" [attr.aria-label]="'Quitar opción ' + o"><i class="bi bi-x"></i></button>
+        </span>
+        <form class="nueva-opcion" (submit)="$event.preventDefault(); agregarOpcion()">
+          <input class="form-control form-control-sm" [(ngModel)]="nuevaOpcion" name="nuevaOpcion" maxlength="50" placeholder="Color, Talla…" aria-label="Nueva opción">
+          <button class="btn btn-sm btn-outline-primary" type="submit">Agregar</button>
+        </form>
+      </div>
+
+      <div class="tabla-variantes">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th *ngFor="let o of nombresOpciones">{{ o }}</th>
+              <th class="text-end">Precio propio</th>
+              <th class="text-end">Precio antes</th>
+              <th class="text-center" *ngIf="!esNuevo">Activa</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let f of filas">
+              <tr *ngIf="f.editando" class="editando">
+                <td><input class="form-control form-control-sm sku" [(ngModel)]="f.sku" maxlength="50" placeholder="P00001-AZUL-M" aria-label="SKU"></td>
+                <td *ngFor="let o of nombresOpciones"><input class="form-control form-control-sm" [(ngModel)]="f.opciones[o]" maxlength="200" [attr.aria-label]="o"></td>
+                <td><input class="form-control form-control-sm precio" type="number" min="0" step="100" [(ngModel)]="f.precio" placeholder="Base" aria-label="Precio propio"></td>
+                <td><input class="form-control form-control-sm precio" type="number" min="0" step="100" [(ngModel)]="f.precioAntes" placeholder="—" aria-label="Precio antes"></td>
+                <td *ngIf="!esNuevo"></td>
+                <td class="text-end acciones-fila">
+                  <ng-container *ngIf="!esNuevo">
+                    <button class="btn btn-sm btn-primary" type="button" (click)="guardarFila(f)" [disabled]="f.guardando || !!errorFila(f)">Guardar</button>
+                    <button class="btn btn-sm btn-link" type="button" (click)="cancelarFila(f)">Cancelar</button>
+                  </ng-container>
+                  <button *ngIf="esNuevo && filas.length > 1" class="btn btn-icono" type="button" (click)="quitarFila(f)" aria-label="Quitar variante"><i class="bi bi-trash"></i></button>
+                </td>
+              </tr>
+              <tr *ngIf="f.editando && errorFila(f) && f.sku" class="error-fila">
+                <td [attr.colspan]="nombresOpciones.length + (esNuevo ? 4 : 5)">{{ errorFila(f) }}</td>
+              </tr>
+              <tr *ngIf="!f.editando" class="fila" [class.apagada]="!f.activa">
+                <td><code>{{ f.sku }}</code></td>
+                <td *ngFor="let o of nombresOpciones">{{ f.opciones[o] || '—' }}</td>
+                <td class="text-end">{{ f.precio != null ? (f.precio | cop) : 'Base' }}</td>
+                <td class="text-end">{{ f.precioAntes != null ? (f.precioAntes | cop) : '—' }}</td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block m-0">
+                    <input class="form-check-input" type="checkbox" role="switch" [checked]="f.activa" [disabled]="f.guardando"
+                           (change)="cambiarEstadoVariante(f, $event)" [attr.aria-label]="'Activa: ' + f.sku">
+                  </div>
+                </td>
+                <td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" (click)="editarFila(f)">Editar</button></td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-sm btn-outline-primary mt-3" type="button" (click)="agregarVariante()"><i class="bi bi-plus-lg me-1"></i>Agregar variante</button>
+      <p class="texto-suave pequeno mt-2 mb-0">Sin precio propio, la variante usa el precio base. Al crear una variante, Inventario la registra con stock 0.</p>
+    </section>
+
+    <!-- Imágenes -->
+    <section class="superficie bloque" *ngIf="producto">
+      <h2>Imágenes <span class="texto-suave">({{ producto.imagenes.length }})</span></h2>
+      <div class="galeria">
+        <figure class="imagen" *ngFor="let img of imagenes" [class.principal]="img.esPrincipal" [class.ocupada]="ocupadas.has(img.id)">
+          <img [src]="img.url" [alt]="img.textoAlternativo ?? ''" loading="lazy">
+          <span class="marca-principal" *ngIf="img.esPrincipal"><i class="bi bi-star-fill"></i> Principal</span>
+          <figcaption>
+            <button class="btn btn-sm btn-light" type="button" *ngIf="!img.esPrincipal" (click)="marcarPrincipal(img)" [disabled]="ocupadas.has(img.id)">Hacer principal</button>
+            <button class="btn btn-sm btn-light text-danger" type="button" (click)="eliminarImagen(img)" [disabled]="ocupadas.has(img.id)" aria-label="Eliminar imagen"><i class="bi bi-trash"></i></button>
+          </figcaption>
+        </figure>
+      </div>
+      <p class="texto-suave pequeno" *ngIf="producto.imagenes.length === 0">Este producto aún no tiene imágenes; en la tienda se muestra un ícono genérico.</p>
+
+      <div class="subir">
+        <input #campoArchivo class="form-control" type="file" accept="image/jpeg,image/png,image/webp" (change)="seleccionarArchivo($event)" aria-label="Archivo de imagen">
+        <input class="form-control" [(ngModel)]="textoAlternativo" maxlength="200" placeholder="Texto alternativo (opcional)" aria-label="Texto alternativo">
+        <button class="btn btn-primary" type="button" (click)="subirImagen(campoArchivo)" [disabled]="!archivo || subiendo">
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="subiendo"></span>Subir
+        </button>
+      </div>
+      <div class="text-danger pequeno mt-2" *ngIf="errorImagen">{{ errorImagen }}</div>
+      <p class="texto-suave pequeno mt-2 mb-0">JPG, PNG o WEBP de hasta 5 MB. La primera imagen queda como principal.</p>
+    </section>
+  </div>
+
+  <div class="pie-crear" *ngIf="esNuevo">
+    <a class="btn btn-link" routerLink="/admin/catalogo">Cancelar</a>
+    <button class="btn btn-primary" type="submit" form="formularioProducto" [disabled]="guardando">
+      <span class="spinner-border spinner-border-sm me-2" *ngIf="guardando"></span>Crear producto
+    </button>
+  </div>
+</ng-container>

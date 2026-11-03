@@ -1,0 +1,48 @@
+@Gateway = http://localhost:5100
+@Token = PEGAR_ACCESS_TOKEN
+@PedidoId = PEGAR_ID_DEL_PEDIDO
+
+### 1. Checkout (el carrito debe tener productos). Cambie la clave en cada compra nueva.
+POST {{Gateway}}/api/pedidos
+Authorization: Bearer {{Token}}
+Idempotency-Key: compra-001
+Content-Type: application/json
+
+{
+  "direccion": {
+    "nombreDestinatario": "Cliente Prueba",
+    "telefono": "3001234567",
+    "direccion": "Calle 10 # 20-30",
+    "ciudad": "Medellín",
+    "departamento": "Antioquia"
+  }
+}
+
+### 2. Pagar. 4111 1111 1111 1111 = aprobada | 4000 0000 0000 0002 = rechazada | otra válida = 80 % aprobada
+POST {{Gateway}}/api/pedidos/{{PedidoId}}/pagar
+Authorization: Bearer {{Token}}
+Content-Type: application/json
+
+{
+  "tarjeta": {
+    "numero": "4111 1111 1111 1111",
+    "titular": "CLIENTE PRUEBA",
+    "mesVencimiento": 12,
+    "anioVencimiento": 2030,
+    "cvv": "123"
+  }
+}
+
+### 3. Consultar el resultado (repetir a los pocos segundos)
+GET {{Gateway}}/api/pedidos/{{PedidoId}}
+Authorization: Bearer {{Token}}
+
+### Mis pedidos
+GET {{Gateway}}/api/pedidos
+Authorization: Bearer {{Token}}
+
+### Cancelar (solo PendientePago)
+POST {{Gateway}}/api/pedidos/{{PedidoId}}/cancelar
+Authorization: Bearer {{Token}}
+
+###

@@ -1,0 +1,44 @@
+<section class="container perfil">
+  <h1>Mi cuenta</h1>
+
+  <div class="tarjeta superficie esqueleto" *ngIf="cargando"></div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <div class="tarjeta superficie" *ngIf="usuario">
+    <div class="cabecera">
+      <span class="avatar">{{ usuario.nombre.charAt(0) }}{{ usuario.apellido.charAt(0) }}</span>
+      <div>
+        <h2>{{ usuario.nombre }} {{ usuario.apellido }}</h2>
+        <span class="texto-suave">{{ usuario.email }}</span>
+      </div>
+    </div>
+
+    <dl class="datos">
+      <div>
+        <dt>Correo verificado</dt>
+        <dd>
+          <span class="estado" [class.si]="usuario.emailVerificado">
+            <i class="bi" [class.bi-patch-check-fill]="usuario.emailVerificado" [class.bi-hourglass-split]="!usuario.emailVerificado"></i>
+            {{ usuario.emailVerificado ? 'Verificado' : 'Pendiente' }}
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt>Roles</dt>
+        <dd><span class="rol" *ngFor="let rol of usuario.roles">{{ rol }}</span></dd>
+      </div>
+      <div>
+        <dt>Identificador</dt>
+        <dd><code>{{ usuario.idUsuario }}</code></dd>
+      </div>
+    </dl>
+
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary" routerLink="/pedidos"><i class="bi bi-receipt me-2"></i>Mis pedidos</a>
+      <button class="btn btn-outline-danger" type="button" (click)="cerrarSesion()">
+        <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+      </button>
+    </div>
+  </div>
+</section>

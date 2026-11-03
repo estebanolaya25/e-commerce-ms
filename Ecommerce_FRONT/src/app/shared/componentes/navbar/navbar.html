@@ -1,0 +1,71 @@
+<nav class="navbar navbar-expand-lg barra sticky-top">
+  <div class="container">
+    <a class="navbar-brand marca" routerLink="/">
+      <span class="marca-icono"><i class="bi bi-bag-heart-fill"></i></span>
+      <span>Tienda <strong>Andina</strong></span>
+    </a>
+
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal"
+            aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir menú">
+      <i class="bi bi-list fs-3"></i>
+    </button>
+
+    <div class="collapse navbar-collapse" id="menuPrincipal">
+      <form class="buscador mx-lg-auto my-3 my-lg-0" role="search" (submit)="$event.preventDefault(); buscar(campoBusqueda.value)">
+        <i class="bi bi-search"></i>
+        <input #campoBusqueda class="form-control" type="search" placeholder="Buscar productos, marcas..." aria-label="Buscar" [value]="textoBusqueda">
+      </form>
+
+      <ul class="navbar-nav align-items-lg-center gap-lg-2">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/pedidos" routerLinkActive="activo">Mis pedidos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link carrito" routerLink="/carrito" routerLinkActive="activo" aria-label="Carrito">
+            <i class="bi bi-bag"></i>
+            <span class="contador" *ngIf="(unidadesCarrito$ | async) as unidades">{{ unidades }}</span>
+          </a>
+        </li>
+
+        <ng-container *ngIf="usuario$ | async as usuario; else invitado">
+          <li class="nav-item dropdown ms-lg-2">
+            <button class="usuario" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar">{{ iniciales(usuario.nombre, usuario.apellido) }}</span>
+              <span class="d-lg-none d-xl-inline">{{ usuario.nombre }}</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end menu-usuario">
+              <li class="encabezado">
+                <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong>
+                <span>{{ usuario.email }}</span>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" routerLink="/cuenta/perfil"><i class="bi bi-person"></i>Mi cuenta</a></li>
+              <li><a class="dropdown-item" routerLink="/pedidos"><i class="bi bi-receipt"></i>Mis pedidos</a></li>
+              <li *ngIf="sesion.tieneAlgunRol(rolesPanel)">
+                <a class="dropdown-item enlace-admin" routerLink="/admin"><i class="bi bi-speedometer2"></i>Administración</a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <button class="dropdown-item text-danger" type="button" (click)="cerrarSesion()">
+                  <i class="bi bi-box-arrow-right"></i>Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </li>
+        </ng-container>
+
+        <ng-template #invitado>
+          <li class="nav-item ms-lg-2">
+            <a class="btn btn-primary btn-sm px-3" routerLink="/cuenta/ingresar">
+              <i class="bi bi-person me-1"></i>Ingresar
+            </a>
+          </li>
+        </ng-template>
+      </ul>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,18 @@
+@use 'tema' as *;
+
+.rol {
+  display: inline-block;
+  padding: 0.12rem 0.55rem;
+  border-radius: $radio-pildora;
+  background: $fondo;
+  color: $texto-suave;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.Administrator { background: $primario; color: $superficie; }
+  &.Support { background: #e0f2fe; color: #0369a1; }
+  &.Warehouse { background: $advertencia-claro; color: $advertencia; }
+  &.CatalogManager { background: $exito-claro; color: $exito; }
+  &.Customer { border: 1px solid $borde; }
+}

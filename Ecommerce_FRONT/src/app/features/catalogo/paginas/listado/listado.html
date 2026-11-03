@@ -1,0 +1,108 @@
+<section class="container listado">
+  <nav class="migas" aria-label="Ruta">
+    <a routerLink="/">Inicio</a><i class="bi bi-chevron-right"></i><span>Productos</span>
+  </nav>
+
+  <div class="cabecera">
+    <div>
+      <h1>{{ titulo }}</h1>
+      <span class="texto-suave" *ngIf="resultado && !cargando">{{ resultado.total }} productos</span>
+    </div>
+
+    <div class="acciones">
+      <button class="btn btn-outline-secondary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtros">
+        <i class="bi bi-sliders me-2"></i>Filtros
+      </button>
+      <select class="form-select orden" [ngModel]="filtro.orden" (ngModelChange)="aplicar({ orden: $event })" aria-label="Ordenar">
+        <option *ngFor="let opcion of opcionesOrden" [value]="opcion.valor">{{ opcion.texto }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="chips" *ngIf="hayFiltros">
+    <span class="chip" *ngIf="filtro.buscar">"{{ filtro.buscar }}" <button type="button" (click)="aplicar({ buscar: null })" aria-label="Quitar"><i class="bi bi-x"></i></button></span>
+    <span class="chip" *ngIf="filtro.categoria">{{ nombreCategoria(filtro.categoria) }} <button type="button" (click)="aplicar({ categoria: null })" aria-label="Quitar"><i class="bi bi-x"></i></button></span>
+    <span class="chip" *ngIf="filtro.marca">{{ nombreMarca(filtro.marca) }} <button type="button" (click)="aplicar({ marca: null })" aria-label="Quitar"><i class="bi bi-x"></i></button></span>
+    <span class="chip" *ngIf="filtro.precioMin != null || filtro.precioMax != null">
+      {{ filtro.precioMin != null ? (filtro.precioMin | cop) : '$ 0' }} – {{ filtro.precioMax != null ? (filtro.precioMax | cop) : 'sin tope' }}
+      <button type="button" (click)="aplicar({ precioMin: null, precioMax: null })" aria-label="Quitar"><i class="bi bi-x"></i></button>
+    </span>
+    <span class="chip" *ngIf="filtro.soloDestacados">Destacados <button type="button" (click)="aplicar({ soloDestacados: null })" aria-label="Quitar"><i class="bi bi-x"></i></button></span>
+    <button class="btn btn-link btn-sm" type="button" (click)="limpiar()">Limpiar todo</button>
+  </div>
+
+  <div class="contenido">
+    <!-- En escritorio es una barra lateral; en móvil, un panel deslizable (offcanvas-lg de Bootstrap). -->
+    <aside class="offcanvas-lg offcanvas-start filtros" tabindex="-1" id="filtros" aria-labelledby="tituloFiltros">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="tituloFiltros">Filtros</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#filtros" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="offcanvas-body flex-column">
+        <div class="grupo">
+          <h6>Categorías</h6>
+          <button type="button" class="opcion" [class.activa]="!filtro.categoria" (click)="aplicar({ categoria: null })">Todas</button>
+          <ng-container *ngFor="let categoria of categorias">
+            <button type="button" class="opcion padre" [class.activa]="filtro.categoria === categoria.slug"
+                    (click)="aplicar({ categoria: categoria.slug })">{{ categoria.nombre }}</button>
+            <button type="button" class="opcion hija" *ngFor="let hija of categoria.hijas" [class.activa]="filtro.categoria === hija.slug"
+                    (click)="aplicar({ categoria: hija.slug })">{{ hija.nombre }}</button>
+          </ng-container>
+        </div>
+
+        <div class="grupo">
+          <h6>Marca</h6>
+          <select class="form-select" [ngModel]="filtro.marca ?? ''" (ngModelChange)="aplicar({ marca: $event || null })" aria-label="Marca">
+            <option value="">Todas las marcas</option>
+            <option *ngFor="let marca of marcas" [value]="marca.slug">{{ marca.nombre }}</option>
+          </select>
+        </div>
+
+        <div class="grupo">
+          <h6>Precio</h6>
+          <div class="rango">
+            <input class="form-control" type="number" min="0" step="10000" placeholder="Mínimo" [(ngModel)]="precioMin" aria-label="Precio mínimo">
+            <span>–</span>
+            <input class="form-control" type="number" min="0" step="10000" placeholder="Máximo" [(ngModel)]="precioMax" aria-label="Precio máximo">
+          </div>
+          <button class="btn btn-outline-primary btn-sm w-100 mt-2" type="button" (click)="aplicarPrecio()">Aplicar precio</button>
+        </div>
+
+        <div class="grupo">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="soloDestacados" [ngModel]="filtro.soloDestacados"
+                   (ngModelChange)="aplicar({ soloDestacados: $event || null })">
+            <label class="form-check-label" for="soloDestacados">Solo destacados</label>
+          </div>
+        </div>
+
+        <button class="btn btn-primary w-100 d-lg-none" type="button" data-bs-dismiss="offcanvas" data-bs-target="#filtros">
+          Ver {{ resultado?.total ?? 0 }} productos
+        </button>
+      </div>
+    </aside>
+
+    <div class="resultados">
+      <div class="rejilla" *ngIf="cargando">
+        <div class="esqueleto" *ngFor="let i of [1, 2, 3, 4, 5, 6]"></div>
+      </div>
+
+      <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+      <div class="vacio superficie" *ngIf="!cargando && !error && resultado?.items?.length === 0">
+        <i class="bi bi-search"></i>
+        <h2>No encontramos productos</h2>
+        <p class="texto-suave">Pruebe con otros filtros o con una búsqueda diferente.</p>
+        <button class="btn btn-primary" type="button" (click)="limpiar()">Ver todos los productos</button>
+      </div>
+
+      <ng-container *ngIf="!cargando && resultado && resultado.items.length > 0">
+        <div class="rejilla">
+          <app-tarjeta-producto *ngFor="let producto of resultado.items" [producto]="producto"></app-tarjeta-producto>
+        </div>
+        <app-paginador [pagina]="resultado.pagina" [totalPaginas]="resultado.totalPaginas" (cambiar)="irAPagina($event)"></app-paginador>
+      </ng-container>
+    </div>
+  </div>
+</section>

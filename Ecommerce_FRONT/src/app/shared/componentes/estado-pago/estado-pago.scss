@@ -1,0 +1,17 @@
+@use 'tema' as *;
+
+.insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: $radio-pildora;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.info { background: #e0f2fe; color: #0369a1; }
+  &.exito { background: $exito-claro; color: $exito; }
+  &.peligro { background: $peligro-claro; color: $peligro; }
+  &.neutro { background: $fondo; color: $texto-suave; border: 1px solid $borde; }
+}

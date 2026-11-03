@@ -1,0 +1,24 @@
+<div class="panel">
+  <aside class="lateral">
+    <div class="perfil">
+      <span class="etiqueta">Panel de administración</span>
+      <strong>{{ nombre }}</strong>
+      <span class="roles">
+        <span class="rol" *ngFor="let rol of rolesUsuario">{{ rol }}</span>
+      </span>
+    </div>
+
+    <nav aria-label="Secciones del panel">
+      <a *ngFor="let seccion of menu" class="enlace" [routerLink]="seccion.ruta" routerLinkActive="activo"
+         [routerLinkActiveOptions]="{ exact: seccion.ruta === '/admin' }">
+        <i class="bi" [ngClass]="seccion.icono"></i>{{ seccion.texto }}
+      </a>
+    </nav>
+
+    <a class="volver" routerLink="/"><i class="bi bi-shop me-2"></i>Volver a la tienda</a>
+  </aside>
+
+  <section class="area">
+    <router-outlet></router-outlet>
+  </section>
+</div>

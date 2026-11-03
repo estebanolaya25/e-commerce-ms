@@ -1,0 +1,15 @@
+<nav class="paginador" *ngIf="totalPaginas > 1" aria-label="Paginación">
+  <button type="button" class="paso" [disabled]="pagina === 1" (click)="ir(pagina - 1)" aria-label="Anterior">
+    <i class="bi bi-chevron-left"></i>
+  </button>
+
+  <ng-container *ngFor="let p of paginas">
+    <span class="separador" *ngIf="p === null">…</span>
+    <button type="button" class="numero" *ngIf="p !== null" [class.actual]="p === pagina" (click)="ir(p)"
+            [attr.aria-current]="p === pagina ? 'page' : null">{{ p }}</button>
+  </ng-container>
+
+  <button type="button" class="paso" [disabled]="pagina === totalPaginas" (click)="ir(pagina + 1)" aria-label="Siguiente">
+    <i class="bi bi-chevron-right"></i>
+  </button>
+</nav>

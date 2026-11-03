@@ -1,0 +1,101 @@
+<section class="container checkout">
+  <app-pasos [actual]="1"></app-pasos>
+
+  <div class="contenido" *ngIf="cargando">
+    <div class="esqueleto alto"></div>
+    <div class="esqueleto"></div>
+  </div>
+
+  <div class="contenido" *ngIf="!cargando && carrito">
+    <form class="superficie formulario" [formGroup]="formulario" (ngSubmit)="confirmar()" novalidate>
+      <h1>Datos de envío</h1>
+      <p class="texto-suave">¿A dónde enviamos su pedido?</p>
+
+      <div class="alert alert-danger" *ngIf="error">
+        <div class="d-flex gap-2"><i class="bi bi-exclamation-triangle"></i><span>{{ error }}</span></div>
+        <ul class="mb-0 mt-2" *ngIf="faltantes.length">
+          <li *ngFor="let f of faltantes">SKU {{ f.sku }}: pidió {{ f.solicitado }}, quedan {{ f.disponible }}</li>
+        </ul>
+        <a class="alert-link d-inline-block mt-2" *ngIf="faltantes.length" routerLink="/carrito">Ajustar el carrito</a>
+      </div>
+
+      <div class="alert alert-warning d-flex gap-2" *ngIf="!carrito.puedeComprar">
+        <i class="bi bi-exclamation-triangle"></i>
+        <span>Hay productos sin stock suficiente. <a class="alert-link" routerLink="/carrito">Revise su carrito</a> antes de continuar.</span>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-7">
+          <label class="form-label" for="nombreDestinatario">Nombre de quien recibe</label>
+          <input id="nombreDestinatario" class="form-control" formControlName="nombreDestinatario" autocomplete="name"
+                 [class.is-invalid]="invalido('nombreDestinatario')">
+          <div class="invalid-feedback">Ingrese el nombre (mínimo 3 caracteres).</div>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" for="telefono">Teléfono</label>
+          <input id="telefono" class="form-control" formControlName="telefono" autocomplete="tel" placeholder="300 123 4567"
+                 [class.is-invalid]="invalido('telefono')">
+          <div class="invalid-feedback">Ingrese un teléfono válido.</div>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="direccion">Dirección</label>
+          <input id="direccion" class="form-control" formControlName="direccion" autocomplete="street-address"
+                 placeholder="Calle 10 # 20-30, apartamento 501" [class.is-invalid]="invalido('direccion')">
+          <div class="invalid-feedback">Ingrese la dirección completa.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="ciudad">Ciudad o municipio</label>
+          <input id="ciudad" class="form-control" formControlName="ciudad" autocomplete="address-level2"
+                 [class.is-invalid]="invalido('ciudad')">
+          <div class="invalid-feedback">Ingrese la ciudad.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="departamento">Departamento</label>
+          <select id="departamento" class="form-select" formControlName="departamento" [class.is-invalid]="invalido('departamento')">
+            <option value="" disabled>Seleccione…</option>
+            <option *ngFor="let d of departamentos" [value]="d">{{ d }}</option>
+          </select>
+          <div class="invalid-feedback">Seleccione el departamento.</div>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="notas">Indicaciones para la entrega <span class="texto-suave">(opcional)</span></label>
+          <textarea id="notas" class="form-control" rows="2" formControlName="notas" placeholder="Torre, portería, horario…"></textarea>
+        </div>
+      </div>
+
+      <div class="acciones">
+        <a class="btn btn-link" routerLink="/carrito"><i class="bi bi-arrow-left me-1"></i>Volver al carrito</a>
+        <button class="btn btn-primary btn-lg" type="submit" [disabled]="enviando || !carrito.puedeComprar">
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="enviando"></span>
+          {{ enviando ? 'Reservando su pedido…' : 'Continuar al pago' }}
+        </button>
+      </div>
+    </form>
+
+    <aside class="superficie resumen">
+      <h2>Su pedido</h2>
+      <ul class="items">
+        <li *ngFor="let item of carrito.items">
+          <span class="miniatura">
+            <img *ngIf="item.imagenUrl" [src]="item.imagenUrl" [alt]="item.nombre ?? item.sku">
+            <span class="cantidad">{{ item.cantidad }}</span>
+          </span>
+          <span class="nombre">
+            {{ item.nombre }}
+            <small>{{ opcionesTexto(item.opciones) }}</small>
+          </span>
+          <strong>{{ item.subtotal | cop }}</strong>
+        </li>
+      </ul>
+      <dl>
+        <dt>Subtotal</dt>
+        <dd>{{ carrito.total | cop }}</dd>
+        <dt>Envío</dt>
+        <dd>{{ envio === 0 ? 'Gratis' : (envio | cop) }}</dd>
+        <dt class="total">Total</dt>
+        <dd class="total">{{ carrito.total + envio | cop }}</dd>
+      </dl>
+      <p class="nota"><i class="bi bi-shield-lock me-1"></i>Al continuar reservamos el stock por 15 minutos mientras paga.</p>
+    </aside>
+  </div>
+</section>

@@ -1,0 +1,126 @@
+@use 'tema' as *;
+
+.mis-pedidos {
+  max-width: 60rem;
+  padding-top: 2rem;
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+  }
+
+  .filtro {
+    width: auto;
+    min-width: 13rem;
+  }
+}
+
+.lista {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pedido {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 1.1rem 1.25rem;
+  color: $texto;
+  transition: border-color $transicion, box-shadow $transicion, transform $transicion;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba($primario, 0.35);
+    box-shadow: $sombra-media;
+  }
+
+  @include desde(md) {
+    grid-template-columns: 1.4fr auto 7rem 8rem auto;
+  }
+}
+
+.principal {
+  display: flex;
+  flex-direction: column;
+
+  span {
+    font-size: 0.85rem;
+  }
+}
+
+.numero {
+  font-size: 1.05rem;
+}
+
+.unidades {
+  font-size: 0.9rem;
+}
+
+.total {
+  font-size: 1.05rem;
+
+  @include desde(md) {
+    text-align: right;
+  }
+}
+
+.accion {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  color: $texto-tenue;
+
+  .pagar {
+    padding: 0.25rem 0.65rem;
+    border-radius: $radio-pildora;
+    background: $acento;
+    color: $superficie;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+}
+
+.vacio {
+  padding: 3.5rem 2rem;
+  text-align: center;
+
+  .icono {
+    display: inline-grid;
+    place-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    background: $primario-claro;
+    color: $primario;
+    font-size: 2rem;
+  }
+
+  h2 {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 1.35rem;
+  }
+}
+
+.esqueleto {
+  height: 4.75rem;
+  border-radius: $radio-lg;
+  background: linear-gradient(90deg, $borde 25%, $fondo 50%, $borde 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite;
+}
+
+@keyframes brillo {
+  to {
+    background-position: -200% 0;
+  }
+}

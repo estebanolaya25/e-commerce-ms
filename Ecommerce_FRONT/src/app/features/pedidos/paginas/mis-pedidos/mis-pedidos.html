@@ -1,0 +1,43 @@
+<section class="container mis-pedidos">
+  <div class="cabecera">
+    <div>
+      <h1>Mis pedidos</h1>
+      <span class="texto-suave" *ngIf="resultado">{{ resultado.total }} {{ resultado.total === 1 ? 'pedido' : 'pedidos' }}</span>
+    </div>
+    <select class="form-select filtro" [ngModel]="estado" (ngModelChange)="filtrar($event)" aria-label="Filtrar por estado">
+      <option value="">Todos los estados</option>
+      <option *ngFor="let e of estados" [value]="e.valor">{{ e.texto }}</option>
+    </select>
+  </div>
+
+  <div class="lista" *ngIf="cargando">
+    <div class="esqueleto" *ngFor="let i of [1, 2, 3]"></div>
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <div class="vacio superficie" *ngIf="!cargando && resultado?.items?.length === 0">
+    <span class="icono"><i class="bi bi-receipt"></i></span>
+    <h2>{{ estado ? 'No tiene pedidos en este estado' : 'Aún no tiene pedidos' }}</h2>
+    <p class="texto-suave">{{ estado ? 'Pruebe con otro filtro.' : 'Cuando compre algo, aquí verá su seguimiento.' }}</p>
+    <a class="btn btn-primary" *ngIf="!estado" routerLink="/productos">Empezar a comprar</a>
+    <button class="btn btn-outline-primary" *ngIf="estado" type="button" (click)="filtrar('')">Ver todos</button>
+  </div>
+
+  <div class="lista" *ngIf="!cargando && resultado && resultado.items.length > 0">
+    <a class="pedido superficie" *ngFor="let pedido of resultado.items" [routerLink]="['/pedidos', pedido.pedidoId]">
+      <div class="principal">
+        <strong class="numero">{{ pedido.numero }}</strong>
+        <span class="texto-suave">{{ fecha(pedido.createdAt) | date: 'd MMM y, h:mm a' }}</span>
+      </div>
+      <app-estado-pedido [estado]="pedido.estado"></app-estado-pedido>
+      <span class="unidades texto-suave">{{ pedido.unidades }} {{ pedido.unidades === 1 ? 'producto' : 'productos' }}</span>
+      <strong class="total">{{ pedido.total | cop }}</strong>
+      <span class="accion">
+        <span class="pagar" *ngIf="esPendiente(pedido)">Pagar ahora</span>
+        <i class="bi bi-chevron-right"></i>
+      </span>
+    </a>
+    <app-paginador [pagina]="resultado.pagina" [totalPaginas]="resultado.totalPaginas" (cambiar)="irAPagina($event)"></app-paginador>
+  </div>
+</section>
