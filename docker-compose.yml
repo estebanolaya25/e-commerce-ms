@@ -195,8 +195,15 @@ services:
       Ollama__Model: "qwen3.5:latest"
       Ollama__MaxConcurrencia: "2"
       Rag__ChromaUrl: "http://chroma:8000"
+      Servicios__CatalogoUrl: "http://catalog-api:8080/"
+      Servicios__InventarioUrl: "http://inventory-api:8080/"
+      RabbitMQ__Host: host.docker.internal
+      RabbitMQ__Usuario: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
     depends_on:
       - chroma
+      - catalog-api
+      - inventory-api
     restart: unless-stopped
 
   chroma:

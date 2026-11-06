@@ -18,7 +18,7 @@
 
       <div class="mensajes" #lista aria-live="polite">
         <div class="burbuja asistente">
-          <p>¡Hola! Soy Andi. Puedo ayudarle con envíos, pagos, pedidos, cambios y devoluciones, tallas y su cuenta.</p>
+          <p>¡Hola! Soy Andi. Puedo ayudarle a encontrar productos y resolver dudas sobre envíos, pagos, pedidos, devoluciones, tallas y su cuenta.</p>
         </div>
 
         @if (!mensajes.length) {
@@ -35,6 +35,37 @@
           } @else {
             <div class="burbuja asistente">
               <div [innerHTML]="formatear(mensaje.content)"></div>
+              @if (mensaje.productos?.length) {
+                <ul class="productos">
+                  @for (producto of mensaje.productos; track producto.slug) {
+                    <li>
+                      <a [routerLink]="['/producto', producto.slug]" (click)="alAbrirProducto()">
+                        @if (producto.imagenUrl) {
+                          <img [src]="producto.imagenUrl" [alt]="producto.nombre" loading="lazy">
+                        } @else {
+                          <span class="sin-imagen" aria-hidden="true"><i class="bi bi-image"></i></span>
+                        }
+                        <span class="datos">
+                          <span class="nombre">{{ producto.nombre }}</span>
+                          @if (producto.marca) {
+                            <span class="marca">{{ producto.marca }}</span>
+                          }
+                          <span class="precio">
+                            {{ producto.precio | cop }}
+                            @if (producto.precioAntes) {
+                              <s>{{ producto.precioAntes | cop }}</s>
+                            }
+                          </span>
+                          @if (producto.disponible === false) {
+                            <span class="agotado">Agotado</span>
+                          }
+                        </span>
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                  }
+                </ul>
+              }
               @if (mensaje.fuentes?.length) {
                 <small class="fuentes"><i class="bi bi-journal-text"></i> {{ mensaje.fuentes!.join(' · ') }}</small>
               }

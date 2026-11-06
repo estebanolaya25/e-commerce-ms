@@ -19,4 +19,4 @@ Algunas de las marcas que se venden en la tienda son: Andino Wear, Café Textil,
 En la página principal se puede buscar por texto libre y filtrar por categoría, marca y rango de precio. En el detalle de cada producto se elige la variante (talla y color) y se ve si hay unidades disponibles en ese momento.
 
 ## Qué puede hacer el asistente
-Andi responde preguntas generales sobre la tienda: envíos, pagos, pedidos, devoluciones, tallas y la cuenta. Por ahora no puede consultar el precio o la disponibilidad de un producto concreto, ni el estado de un pedido específico: esos datos se ven en la página del producto y en la sección «Mis pedidos».
+Andi ayuda a encontrar productos del catálogo con lenguaje natural (por ejemplo "una chaqueta para la lluvia de menos de 300 mil") y muestra su precio y disponibilidad del momento. También responde preguntas generales sobre envíos, pagos, pedidos, devoluciones, tallas y la cuenta. Por ahora no puede ver el carrito ni el estado de un pedido específico: eso se ve en el carrito y en la sección «Mis pedidos».

@@ -22,10 +22,10 @@ export class AsistenteChat implements OnDestroy {
 
   readonly maxCaracteres = MAX_CARACTERES;
   readonly sugerencias = [
+    'Busco una chaqueta para la lluvia',
     '¿Cuánto cuesta el envío?',
     '¿Cómo cancelo un pedido?',
-    '¿Cómo sé qué talla soy?',
-    '¿Puedo devolver un producto?'
+    '¿Cómo sé qué talla soy?'
   ];
 
   abierto = false;
@@ -88,6 +88,13 @@ export class AsistenteChat implements OnDestroy {
     }
   }
 
+  // En celular el chat ocupa toda la pantalla: al abrir un producto se cierra para que se vea la página.
+  alAbrirProducto(): void {
+    if (window.matchMedia('(max-width: 575.98px)').matches) {
+      this.cerrar();
+    }
+  }
+
   nuevaConversacion(): void {
     if (this.respondiendo) {
       return;
@@ -143,7 +150,13 @@ export class AsistenteChat implements OnDestroy {
 
     this.asistente.preguntar(this.mensajes).subscribe({
       next: respuesta => {
-        this.mensajes = [...this.mensajes, { role: 'assistant', content: respuesta.reply, fuentes: respuesta.sources }];
+        this.mensajes = [...this.mensajes, {
+          role: 'assistant',
+          content: respuesta.reply,
+          // Si recomendó productos, las fuentes de la base de conocimiento no aportan: se muestran las tarjetas.
+          fuentes: respuesta.productos?.length ? [] : respuesta.sources,
+          productos: respuesta.productos ?? []
+        }];
         this.respondiendo = false;
         this.guardarHistorial();
         this.bajarAlFinal();

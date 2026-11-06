@@ -12,7 +12,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 - Registro, inicio de sesión y renovación automática de la sesión.
 - Carrito, checkout con **reserva de stock por 15 minutos** y pago con tarjeta (pasarela simulada).
 - Historial de pedidos con línea de tiempo de estados y cancelación mientras no estén pagados.
-- Asistente virtual (Andi) en un chat flotante: responde preguntas de envíos, pagos, pedidos, devoluciones, tallas y cuenta con RAG sobre una base de conocimiento propia.
+- Asistente virtual (Andi) en un chat flotante: busca productos en lenguaje natural ("tenis para correr de menos de 200 mil") y los muestra como tarjetas con precio y disponibilidad, y responde preguntas de envíos, pagos, pedidos, devoluciones, tallas y cuenta con RAG sobre una base de conocimiento propia.
 
 **Panel interno (`/admin`) por roles**
 
@@ -41,6 +41,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
    Catálogo ──VarianteCreada──────────────────────────► Inventario
    Pedidos  ──PedidoCreado────────────────────────────► Carrito
    Pagos    ──PagoAprobado / PagoRechazado / Reembolsado► Pedidos
+   Catálogo ──ProductoModificado / CatalogoModificado─────► Asistente
 ```
 
 | Servicio | Responsabilidad | Almacenamiento |
@@ -52,7 +53,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 | **Carrito** | Carrito por usuario con precios y disponibilidad | Redis |
 | **Pedidos** | Checkout y orquestación de la saga del pedido | SQL Server |
 | **Pagos** | Pasarela de pagos simulada | SQL Server |
-| **Asistente** | Chat con RAG: busca en la base de conocimiento y responde con un modelo local | ChromaDB (vectores) |
+| **Asistente** | Chat con RAG y búsqueda semántica de productos; responde con un modelo local | ChromaDB (vectores) |
 
 ### Decisiones de diseño
 
@@ -159,6 +160,9 @@ Ollama corre en el equipo (fuera de Docker) para usar la GPU. Con Docker, `chrom
 
 - Al arrancar, si la colección está vacía, indexa sola los documentos de `Assistant_BACK/Assistant_Api/BaseConocimiento/`.
 - Tras cambiar los documentos: `POST /api/asistente/documentos/reindexar` con un token de administrador.
+- **Productos:** al arrancar, si su colección está vacía, lee todo el catálogo activo e indexa un documento por producto (nombre, categoría, marca, colores, tallas y descripción). Después se mantiene al día solo: Catálogo publica `ProductoModificado` al crear o editar un producto, sus variantes o imágenes, o al cambiar su estado, y `CatalogoModificado` al cambiar una categoría o marca (el asistente resincroniza todo). Resincronización manual: `POST /api/asistente/productos/sincronizar` (administrador).
+- En cada pregunta busca los productos más parecidos (distancia coseno ≤ `Productos:DistanciaMaxima`), aplica el rango de precio que pida el cliente ("menos de 200 mil", "entre 100 y 150 lucas") y consulta la disponibilidad real en Inventario. El modelo responde en JSON estructurado con el texto y los slugs que recomienda, y solo esos se muestran como tarjetas.
+- `GET /api/asistente/productos/buscar?q=...` hace la búsqueda semántica sin pasar por el modelo de chat (rápida, incluye la distancia de cada resultado; útil para calibrar el umbral).
 - El prompt, el modelo, los sinónimos y los límites están en `Assistant_BACK/Assistant_Api/asistente.json`.
 - Seguridad: el modelo se fija en el servidor, solo se aceptan mensajes `user`/`assistant` (un cliente no puede inyectar `system`), el historial se recorta, el gateway limita a 10 preguntas por minuto y como máximo 2 respuestas se generan a la vez (las demás esperan turno o reciben 503).
 - Los documentos marcados con `BORRADOR` (devoluciones, tiempos de entrega, contacto, medidas de tallas) deben revisarse con el negocio.

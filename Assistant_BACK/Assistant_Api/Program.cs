@@ -1,6 +1,10 @@
+using Assistant_Api.mensajeria;
 using Assistant_Api.Servicios;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
@@ -20,9 +24,15 @@ string jwtKey = builder.Configuration["Jwt:Key"]
 if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
     throw new InvalidOperationException("Jwt:Key debe tener al menos 32 bytes.");
 
+string catalogoUrl = builder.Configuration["Servicios:CatalogoUrl"]
+    ?? throw new InvalidOperationException("Falta configurar Servicios:CatalogoUrl.");
+string inventarioUrl = builder.Configuration["Servicios:InventarioUrl"]
+    ?? throw new InvalidOperationException("Falta configurar Servicios:InventarioUrl.");
+
 builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ollama"));
 builder.Services.Configure<RagOptions>(builder.Configuration.GetSection("Rag"));
 builder.Services.Configure<AsistenteOptions>(builder.Configuration.GetSection("Asistente"));
+builder.Services.Configure<ProductosOptions>(builder.Configuration.GetSection("Productos"));
 
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
@@ -87,9 +97,56 @@ builder.Services.AddHttpClient<ChromaService>(cliente =>
     cliente.BaseAddress = new Uri(builder.Configuration["Rag:ChromaUrl"] ?? "http://localhost:8000");
     cliente.Timeout = TimeSpan.FromSeconds(30);
 });
+
+// Catálogo e Inventario: mismas reglas de resiliencia que usan Carrito y Pedidos entre servicios
+// (2 s por intento, 2 reintentos, circuit breaker). El chat no debe quedarse esperando a un servicio caído.
+void ConfigurarResiliencia(HttpStandardResilienceOptions opciones)
+{
+    opciones.AttemptTimeout.Timeout = TimeSpan.FromSeconds(2);
+    opciones.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(6);
+    opciones.Retry.MaxRetryAttempts = 2;
+    opciones.Retry.Delay = TimeSpan.FromMilliseconds(200);
+    opciones.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+    opciones.CircuitBreaker.MinimumThroughput = 5;
+    opciones.CircuitBreaker.FailureRatio = 0.5;
+    opciones.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+}
+
+builder.Services
+    .AddHttpClient<CatalogoCliente>(cliente => cliente.BaseAddress = new Uri(catalogoUrl))
+    .AddStandardResilienceHandler(ConfigurarResiliencia);
+builder.Services
+    .AddHttpClient<InventarioCliente>(cliente => cliente.BaseAddress = new Uri(inventarioUrl))
+    .AddStandardResilienceHandler(ConfigurarResiliencia);
+
 builder.Services.AddScoped<KnowledgeBaseService>();
+builder.Services.AddScoped<ProductosIndiceService>();
 builder.Services.AddSingleton<ColaOllama>();
 builder.Services.AddHostedService<IndexacionInicial>();
+
+// Eventos de Catálogo para mantener el índice de productos al día.
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<ProductoModificadoConsumer>();
+    // Una sincronización completa a la vez: varios cambios de categoría seguidos no lanzan varias en paralelo.
+    x.AddConsumer<CatalogoModificadoConsumer>(c => c.ConcurrentMessageLimit = 1);
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(
+            builder.Configuration["RabbitMQ:Host"] ?? "localhost",
+            ushort.TryParse(builder.Configuration["RabbitMQ:Puerto"], out ushort puerto) ? puerto : (ushort)5672,
+            builder.Configuration["RabbitMQ:VirtualHost"] ?? "/",
+            h =>
+            {
+                h.Username(builder.Configuration["RabbitMQ:Usuario"] ?? "guest");
+                h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
+            });
+
+        cfg.UseMessageRetry(r => r.Intervals(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15)));
+        cfg.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("asistente", false));
+    });
+});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -120,6 +177,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = registro => !registro.Tags.Contains("masstransit") });
+app.MapHealthChecks("/health/ready");
 
 app.Run();

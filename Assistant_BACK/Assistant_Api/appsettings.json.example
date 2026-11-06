@@ -10,5 +10,16 @@
     "Issuer": "ecommerce-auth",
     "Audience": "ecommerce-api",
     "Key": "REEMPLAZAR_CON_LA_MISMA_CLAVE_DE_AUTH_API"
+  },
+  "Servicios": {
+    "CatalogoUrl": "http://localhost:5102/",
+    "InventarioUrl": "http://localhost:5103/"
+  },
+  "RabbitMQ": {
+    "Host": "localhost",
+    "Puerto": "5672",
+    "VirtualHost": "/",
+    "Usuario": "guest",
+    "Password": "guest"
   }
 }

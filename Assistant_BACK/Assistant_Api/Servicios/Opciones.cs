@@ -41,6 +41,27 @@ public class RagOptions
     public List<List<string>> Sinonimos { get; set; } = [];
 }
 
+public class ProductosOptions
+{
+    /// <summary>Colección de ChromaDB con un documento por producto (aparte de la base de conocimiento).</summary>
+    public string Coleccion { get; set; } = "productos_tienda";
+
+    /// <summary>Productos candidatos que se pasan al modelo en cada pregunta.</summary>
+    public int Candidatos { get; set; } = 6;
+
+    /// <summary>Si la pregunta trae un rango de precio, se buscan más vecinos para que queden suficientes tras filtrar.</summary>
+    public int CandidatosConFiltroPrecio { get; set; } = 60;
+
+    /// <summary>Distancia coseno máxima: por encima, el producto no tiene relación con la pregunta y no se ofrece.</summary>
+    public float DistanciaMaxima { get; set; } = 0.36f;
+
+    /// <summary>Tarjetas de producto que puede mostrar una respuesta.</summary>
+    public int MaxSugerencias { get; set; } = 4;
+
+    /// <summary>Productos que se leen de Catálogo en paralelo durante una sincronización completa.</summary>
+    public int ParalelismoSincronizacion { get; set; } = 4;
+}
+
 public class AsistenteOptions
 {
     /// <summary>Mensajes del historial que se envían al modelo (los más recientes).</summary>

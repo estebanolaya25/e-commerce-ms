@@ -15,12 +15,14 @@ namespace CapaNegocios.Implementacion.marcas.Implementacion
 
         private readonly IMarcasCapaDatos _marcasCapaDatos;
         private readonly ICacheCatalogo _cache;
+        private readonly clsNotificadorCatalogo _notificador;
         private readonly IConfiguration _configuration;
 
-        public clsMarcasCapaNegocios(IMarcasCapaDatos marcasCapaDatos, ICacheCatalogo cache, IConfiguration configuration)
+        public clsMarcasCapaNegocios(IMarcasCapaDatos marcasCapaDatos, ICacheCatalogo cache, clsNotificadorCatalogo notificador, IConfiguration configuration)
         {
             _marcasCapaDatos = marcasCapaDatos;
             _cache = cache;
+            _notificador = notificador;
             _configuration = configuration;
         }
 
@@ -69,6 +71,7 @@ namespace CapaNegocios.Implementacion.marcas.Implementacion
                     return ResultadoCatalogo<MarcaDto>.Error(EstadoResultado.NoEncontrado, MensajeNoEncontrada);
 
                 await _cache.Invalidar();
+                await _notificador.CatalogoModificado("Marca actualizada");
                 return ResultadoCatalogo<MarcaDto>.Ok((await _marcasCapaDatos.ObtenerMarcaPorId(marcaId))!);
             }
             catch (ConflictoDatosException ex)
@@ -83,6 +86,7 @@ namespace CapaNegocios.Implementacion.marcas.Implementacion
                 return ResultadoCatalogo<bool>.Error(EstadoResultado.NoEncontrado, MensajeNoEncontrada);
 
             await _cache.Invalidar();
+            await _notificador.CatalogoModificado("Marca activada o desactivada");
             return ResultadoCatalogo<bool>.Ok(true);
         }
     }

@@ -12,4 +12,4 @@
 El estado, los productos y la línea de tiempo de cada pedido se ven en «Mis pedidos». Para cualquier solicitud sobre un pedido conviene tener a mano su número, que aparece en el detalle del pedido.
 
 ## Qué responde el asistente
-El asistente virtual Andi responde preguntas generales sobre envíos, pagos, pedidos, cambios y devoluciones, tallas y la cuenta. No puede modificar pedidos, hacer reembolsos ni ver datos de la cuenta.
+El asistente virtual Andi busca y recomienda productos del catálogo, y responde preguntas generales sobre envíos, pagos, pedidos, cambios y devoluciones, tallas y la cuenta. No puede modificar pedidos, agregar productos al carrito, hacer reembolsos ni ver datos de la cuenta.

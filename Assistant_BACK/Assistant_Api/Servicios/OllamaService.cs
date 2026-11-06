@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Assistant_Api.Modelos;
 using Microsoft.Extensions.Options;
@@ -11,11 +14,30 @@ public class OllamaService(
     HttpClient http,
     IOptions<OllamaOptions> options,
     IOptions<AsistenteOptions> asistenteOptions,
+    IOptions<ProductosOptions> productosOptions,
     KnowledgeBaseService knowledgeBase,
-    ColaOllama cola)
+    ProductosIndiceService productos,
+    ColaOllama cola,
+    ILogger<OllamaService> logger)
 {
     private readonly OllamaOptions _options = options.Value;
     private readonly AsistenteOptions _asistente = asistenteOptions.Value;
+    private readonly ProductosOptions _productos = productosOptions.Value;
+
+    private static readonly CultureInfo Colombia = CultureInfo.GetCultureInfo("es-CO");
+
+    // Salida estructurada de Ollama: el modelo devuelve el texto y, aparte, los slugs de los productos que recomienda.
+    // Así las tarjetas solo aparecen cuando el modelo decidió que la pregunta era sobre productos.
+    private static readonly JsonElement FormatoRespuesta = JsonDocument.Parse("""
+        {
+          "type": "object",
+          "properties": {
+            "respuesta": { "type": "string" },
+            "productos": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["respuesta", "productos"]
+        }
+        """).RootElement;
 
     public async Task<ChatResponse> ChatAsync(IReadOnlyList<MensajeChat> historial, CancellationToken ct)
     {
@@ -29,12 +51,13 @@ public class OllamaService(
         var combinedQuestions = string.Join("\n", lastQuestions);
         var fragments = await knowledgeBase.SearchAsync([.. lastQuestions, combinedQuestions], ct);
         var synonyms = knowledgeBase.MatchingSynonymGroups(combinedQuestions);
+        var candidatos = await BuscarProductosAsync(lastQuestions, combinedQuestions, ct);
 
-        var messages = new List<OllamaMessage> { new("system", BuildSystemPrompt(fragments, synonyms)) };
+        var messages = new List<OllamaMessage> { new("system", BuildSystemPrompt(fragments, synonyms, candidatos)) };
         messages.AddRange(historial.Select(m => new OllamaMessage(m.Role, m.Content)));
 
         var payload = new OllamaChatRequest(_options.Model, messages, Stream: false, _options.Think,
-            new OllamaChatOptions(_options.Temperature, _options.ContextSize));
+            new OllamaChatOptions(_options.Temperature, _options.ContextSize), FormatoRespuesta);
 
         if (!await cola.EsperarTurnoAsync(TimeSpan.FromSeconds(_options.SegundosEsperaTurno), ct))
         {
@@ -63,7 +86,56 @@ public class OllamaService(
             .Distinct()
             .ToList();
 
-        return new ChatResponse(result?.Message?.Content?.Trim() ?? string.Empty, sources);
+        var (respuesta, slugs) = LeerSalida(result?.Message?.Content);
+        var sugeridos = slugs
+            .Select(slug => candidatos.FirstOrDefault(c => c.Slug.Equals(slug.Trim(), StringComparison.OrdinalIgnoreCase)))
+            .Where(c => c is not null)
+            .DistinctBy(c => c!.Slug)
+            .Take(_productos.MaxSugerencias)
+            .Select(c => c!.ATarjeta())
+            .ToList();
+
+        return new ChatResponse(respuesta, sources, sugeridos);
+    }
+
+    /// <summary>
+    /// Busca con las dos últimas preguntas juntas para entender seguimientos ("¿y en negro?"). El rango de precio se
+    /// toma de la última pregunta y, si no trae, del contexto. Un fallo aquí no impide responder lo demás.
+    /// </summary>
+    private async Task<List<ProductoCandidato>> BuscarProductosAsync(List<string> lastQuestions, string combined, CancellationToken ct)
+    {
+        try
+        {
+            var filtro = FiltroPrecio.Extraer(lastQuestions.LastOrDefault() ?? string.Empty);
+            if (filtro.Vacio)
+            {
+                filtro = FiltroPrecio.Extraer(combined);
+            }
+            return await productos.BuscarAsync(combined, filtro, ct);
+        }
+        catch (Exception ex) when (Fallos.EsTransitorio(ex) && !ct.IsCancellationRequested)
+        {
+            logger.LogWarning("No se pudieron buscar productos: {Mensaje}", ex.Message);
+            return [];
+        }
+    }
+
+    /// <summary>Lee el JSON del modelo. Si no viene bien formado, se usa el texto tal cual y sin productos.</summary>
+    private static (string Respuesta, List<string> Slugs) LeerSalida(string? contenido)
+    {
+        var texto = contenido?.Trim() ?? string.Empty;
+        try
+        {
+            var salida = JsonSerializer.Deserialize<SalidaModelo>(texto);
+            if (salida?.Respuesta is { Length: > 0 })
+            {
+                return (salida.Respuesta.Trim(), salida.Productos ?? []);
+            }
+        }
+        catch (JsonException)
+        {
+        }
+        return (texto, []);
     }
 
     /// <summary>
@@ -86,7 +158,7 @@ public class OllamaService(
         return historial.Count > 0 && historial[^1].Role == "user" ? historial : null;
     }
 
-    private string BuildSystemPrompt(List<ChromaResult> fragments, List<List<string>> synonyms)
+    private string BuildSystemPrompt(List<ChromaResult> fragments, List<List<string>> synonyms, List<ProductoCandidato> candidatos)
     {
         var context = fragments.Count == 0
             ? "(No se encontró información relevante en la base de conocimiento.)"
@@ -107,7 +179,49 @@ public class OllamaService(
             <contexto>
             {context}
             </contexto>
+
+            PRODUCTOS DEL CATÁLOGO RELACIONADOS CON LA PREGUNTA (precios y disponibilidad de este momento):
+            <productos>
+            {DescribirProductos(candidatos)}
+            </productos>
+
+            FORMATO DE RESPUESTA: responde SOLO con un objeto JSON {EjemploSalida}.
+            - "respuesta": tu mensaje para el cliente (puede usar **negritas** y viñetas con "- ").
+            - "productos": si el cliente busca, compara o pide recomendaciones de productos, incluye los slugs (máximo {_productos.MaxSugerencias}) de los productos de <productos> que mejor encajan, empezando por los disponibles. Si la pregunta no es sobre productos, o ninguno encaja, deja la lista vacía.
+            - Solo puedes recomendar productos que estén en <productos>, con su precio exacto. Nunca inventes productos, precios, tallas, colores ni existencias.
+            - Si el cliente pide un precio máximo o mínimo, compara cada precio antes de recomendar: solo incluye los que cumplen. Si ninguno cumple, dilo con claridad y no ofrezcas los demás como si cumplieran.
+            - Si recomiendas productos, menciónalos brevemente en "respuesta" (nombre y precio); la tienda mostrará sus tarjetas debajo del mensaje.
+            - Si buscan un producto y <productos> está vacío o no encaja, dilo y sugiere usar el buscador de la tienda.
             """;
+    }
+
+    private const string EjemploSalida = """{"respuesta": "...", "productos": ["slug", ...]}""";
+
+    private static string DescribirProductos(List<ProductoCandidato> candidatos)
+    {
+        if (candidatos.Count == 0)
+        {
+            return "(Ningún producto del catálogo se relaciona con la pregunta.)";
+        }
+
+        var texto = new StringBuilder();
+        foreach (var c in candidatos)
+        {
+            texto.Append($"- slug: {c.Slug} | {c.Nombre}");
+            if (c.Marca is not null) texto.Append($" | marca: {c.Marca}");
+            texto.Append($" | categoría: {c.Categoria} | precio: {c.Precio.ToString("C0", Colombia)}");
+            if (c.PrecioAntes is not null) texto.Append($" (antes {c.PrecioAntes.Value.ToString("C0", Colombia)})");
+            if (c.Colores.Length > 0) texto.Append($" | colores: {c.Colores}");
+            if (c.Tallas.Length > 0) texto.Append($" | tallas: {c.Tallas}");
+            texto.Append(c.Disponible switch
+            {
+                true => " | disponible",
+                false => " | AGOTADO",
+                null => " | disponibilidad sin confirmar"
+            });
+            texto.AppendLine();
+        }
+        return texto.ToString().TrimEnd();
     }
 
     private record OllamaMessage(
@@ -119,11 +233,16 @@ public class OllamaService(
         [property: JsonPropertyName("messages")] List<OllamaMessage> Messages,
         [property: JsonPropertyName("stream")] bool Stream,
         [property: JsonPropertyName("think"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Think,
-        [property: JsonPropertyName("options")] OllamaChatOptions Options);
+        [property: JsonPropertyName("options")] OllamaChatOptions Options,
+        [property: JsonPropertyName("format")] JsonElement Format);
 
     private record OllamaChatOptions(
         [property: JsonPropertyName("temperature")] double Temperature,
         [property: JsonPropertyName("num_ctx")] int NumCtx);
+
+    private record SalidaModelo(
+        [property: JsonPropertyName("respuesta")] string? Respuesta,
+        [property: JsonPropertyName("productos")] List<string>? Productos);
 
     private record OllamaChatResponse(
         [property: JsonPropertyName("message")] OllamaMessage? Message);
