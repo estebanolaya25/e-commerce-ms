@@ -1,7 +1,10 @@
 import { Component, ElementRef, HostListener, OnDestroy, ViewChild } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Observable, Subscription, distinctUntilChanged, filter, map, skip } from 'rxjs';
-import { AccionEnChat, MensajeAsistente } from '../../../core/modelos/asistente.model';
+import { ROLES } from '../../../core/config/roles';
+import { AccionEnChat, MensajeAsistente, RespuestaAsistente } from '../../../core/modelos/asistente.model';
+import { EstadoPedido } from '../../../core/modelos/pedido.model';
+import { AdminPedidosService } from '../../../core/servicios/admin-pedidos.service';
 import { AsistenteService } from '../../../core/servicios/asistente.service';
 import { CarritoService } from '../../../core/servicios/carrito.service';
 import { PedidosService } from '../../../core/servicios/pedidos.service';
@@ -15,6 +18,7 @@ const MAX_CARACTERES = 1000;
 // y se guarda en sessionStorage para que sobreviva a recargar la pestaña (no a cerrarla).
 // Con sesión, la conversación puede traer datos de los pedidos del cliente: se guarda por usuario y se borra al
 // cerrar sesión, para que otra persona en el mismo navegador no la vea.
+// En /admin cambia a modo panel: otro endpoint (herramientas según el rol del empleado) y otra conversación.
 @Component({
   selector: 'app-asistente-chat',
   standalone: false,
@@ -26,15 +30,9 @@ export class AsistenteChat implements OnDestroy {
   @ViewChild('lista') private lista?: ElementRef<HTMLDivElement>;
 
   readonly maxCaracteres = MAX_CARACTERES;
-  readonly sugerencias = [
-    'Busco una chaqueta para la lluvia',
-    '¿Cuánto cuesta el envío?',
-    '¿Cómo cancelo un pedido?',
-    '¿Cómo sé qué talla soy?'
-  ];
 
   abierto = false;
-  visible = true;
+  modo: 'tienda' | 'panel' = 'tienda';
   respondiendo = false;
   error: string | null = null;
   texto = '';
@@ -48,29 +46,74 @@ export class AsistenteChat implements OnDestroy {
     private asistente: AsistenteService,
     private carrito: CarritoService,
     private pedidos: PedidosService,
-    sesion: SesionService,
+    private adminPedidos: AdminPedidosService,
+    private sesion: SesionService,
     router: Router
   ) {
     this.idUsuario = sesion.usuario?.id ?? null;
+    this.modo = router.url.startsWith('/admin') ? 'panel' : 'tienda';
     this.mensajes = this.leerHistorial();
 
     this.cambioDeSesion = sesion.usuario$
       .pipe(map(usuario => usuario?.id ?? null), distinctUntilChanged(), skip(1))
       .subscribe(id => {
         if (this.idUsuario !== null) {
-          this.borrarHistorial(this.idUsuario);
+          this.borrarHistorial(this.idUsuario, 'tienda');
+          this.borrarHistorial(this.idUsuario, 'panel');
         }
         this.idUsuario = id;
         this.mensajes = this.leerHistorial();
         this.error = null;
       });
 
-    // El panel interno tiene su propio flujo de trabajo; en esta fase el asistente es solo para clientes.
-    const actualizarVisibilidad = (url: string) => (this.visible = !url.startsWith('/admin'));
-    actualizarVisibilidad(router.url);
+    // Al entrar o salir de /admin cambia el asistente y su conversación (cada modo guarda la suya).
     this.navegacion = router.events
       .pipe(filter(evento => evento instanceof NavigationEnd))
-      .subscribe(evento => actualizarVisibilidad((evento as NavigationEnd).urlAfterRedirects));
+      .subscribe(evento => {
+        const modo = (evento as NavigationEnd).urlAfterRedirects.startsWith('/admin') ? 'panel' : 'tienda';
+        if (modo !== this.modo && !this.respondiendo) {
+          this.modo = modo;
+          this.mensajes = this.leerHistorial();
+          this.error = null;
+        }
+      });
+  }
+
+  get titulo(): string {
+    return this.modo === 'panel' ? 'Andi · interno' : 'Andi';
+  }
+
+  get subtitulo(): string {
+    return this.modo === 'panel' ? 'Asistente del equipo de Tienda Andina' : 'Asistente virtual de Tienda Andina';
+  }
+
+  get saludo(): string {
+    if (this.modo === 'tienda') {
+      return '¡Hola! Soy Andi. Puedo ayudarle a encontrar productos y resolver dudas sobre envíos, pagos, pedidos, devoluciones, tallas y su cuenta.';
+    }
+    const partes: string[] = [];
+    if (this.sesion.tieneAlgunRol([ROLES.administrador, ROLES.soporte, ROLES.bodega])) partes.push('consultar pedidos');
+    if (this.sesion.tieneAlgunRol([ROLES.administrador, ROLES.soporte])) partes.push('revisar pagos');
+    if (this.sesion.tieneAlgunRol([ROLES.administrador, ROLES.bodega])) partes.push('ver el stock y preparar despachos');
+    if (this.sesion.tieneAlgunRol([ROLES.administrador, ROLES.catalogo])) partes.push('buscar productos del catálogo');
+    return `Hola, soy Andi. Según tu rol puedo ${partes.join(', ') || 'responder dudas sobre las políticas de la tienda'}.`;
+  }
+
+  get sugerencias(): string[] {
+    if (this.modo === 'tienda') {
+      return ['Busco una chaqueta para la lluvia', '¿Cuánto cuesta el envío?', '¿Cómo cancelo un pedido?', '¿Cómo sé qué talla soy?'];
+    }
+    const lista: string[] = [];
+    if (this.sesion.tieneAlgunRol([ROLES.administrador, ROLES.bodega])) {
+      lista.push('¿Qué pedidos pagados faltan por despachar?', '¿Qué SKU están bajo el stock mínimo?');
+    }
+    if (this.sesion.tieneAlgunRol([ROLES.administrador, ROLES.soporte])) {
+      lista.push('¿Qué pedidos tienen el pago en proceso?', '¿Cuál es la política de devoluciones?');
+    }
+    if (this.sesion.tieneAlgunRol([ROLES.administrador, ROLES.catalogo])) {
+      lista.push('¿Qué chaquetas tenemos en el catálogo?');
+    }
+    return [...new Set(lista)].slice(0, 4);
   }
 
   ngOnDestroy(): void {
@@ -91,6 +134,9 @@ export class AsistenteChat implements OnDestroy {
     } else if (accion.tipo === 'cancelar_pedido' && accion.pedidoId) {
       operacion = this.pedidos.cancelar(accion.pedidoId);
       exito = accion.numero ? `Pedido ${accion.numero} cancelado.` : 'Pedido cancelado.';
+    } else if (accion.tipo === 'avanzar_pedido' && accion.pedidoId && accion.estadoNuevo) {
+      operacion = this.adminPedidos.avanzar(accion.pedidoId, accion.estadoNuevo as EstadoPedido, 'Desde el asistente del panel');
+      exito = accion.numero ? `Pedido ${accion.numero} actualizado.` : 'Pedido actualizado.';
     } else {
       accion.estado = 'error';
       accion.mensaje = 'No se pudo realizar esta acción.';
@@ -217,7 +263,10 @@ export class AsistenteChat implements OnDestroy {
     this.guardarHistorial();
     this.bajarAlFinal();
 
-    this.asistente.preguntar(this.mensajes).subscribe({
+    const peticion: Observable<RespuestaAsistente> = this.modo === 'panel'
+      ? this.asistente.preguntarPanel(this.mensajes)
+      : this.asistente.preguntar(this.mensajes);
+    peticion.subscribe({
       next: respuesta => {
         this.mensajes = [...this.mensajes, {
           role: 'assistant',
@@ -253,8 +302,8 @@ export class AsistenteChat implements OnDestroy {
     });
   }
 
-  private clave(idUsuario: string | null): string {
-    return `${CLAVE_HISTORIAL}.${idUsuario ?? 'invitado'}`;
+  private clave(idUsuario: string | null, modo = this.modo): string {
+    return `${CLAVE_HISTORIAL}.${modo}.${idUsuario ?? 'invitado'}`;
   }
 
   private leerHistorial(): MensajeAsistente[] {
@@ -277,9 +326,9 @@ export class AsistenteChat implements OnDestroy {
     }
   }
 
-  private borrarHistorial(idUsuario: string): void {
+  private borrarHistorial(idUsuario: string, modo: 'tienda' | 'panel'): void {
     try {
-      sessionStorage.removeItem(this.clave(idUsuario));
+      sessionStorage.removeItem(this.clave(idUsuario, modo));
     } catch {
       // Sin almacenamiento: no hay nada que borrar.
     }

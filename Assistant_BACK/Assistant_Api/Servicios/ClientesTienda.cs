@@ -34,6 +34,21 @@ public class CatalogoCliente(HttpClient http)
         await http.GetFromJsonAsync<PaginaCatalogo>($"api/catalogo/productos?pagina={pagina}&tamano={tamano}&orden=nombre", ct)
             ?? new PaginaCatalogo([], pagina, 0);
 
+    /// <summary>Nombre y opciones de varias variantes por SKU (endpoint público, máximo 50 por consulta).</summary>
+    public async Task<Dictionary<string, VarianteResumenCatalogo>> VariantesAsync(IEnumerable<string> skus, CancellationToken ct)
+    {
+        var resultado = new Dictionary<string, VarianteResumenCatalogo>(StringComparer.OrdinalIgnoreCase);
+        foreach (var lote in skus.Distinct(StringComparer.OrdinalIgnoreCase).Chunk(50))
+        {
+            var url = $"api/catalogo/variantes?skus={Uri.EscapeDataString(string.Join(',', lote))}";
+            foreach (var v in await http.GetFromJsonAsync<List<VarianteResumenCatalogo>>(url, ct) ?? [])
+            {
+                resultado[v.Sku] = v;
+            }
+        }
+        return resultado;
+    }
+
     /// <summary>null si el producto no existe o ya no está a la venta (inactivo, sin variantes activas…).</summary>
     public async Task<ProductoCatalogo?> ObtenerAsync(string slug, CancellationToken ct)
     {

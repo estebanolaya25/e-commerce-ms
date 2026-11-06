@@ -13,13 +13,15 @@ export interface ProductoSugerido {
 
 // Acción que el asistente propone; solo se ejecuta si el cliente pulsa «Confirmar» (lo hace el frontend, no el asistente).
 export interface AccionPropuesta {
-  tipo: 'agregar_carrito' | 'cancelar_pedido';
+  tipo: 'agregar_carrito' | 'cancelar_pedido' | 'avanzar_pedido';
   descripcion: string;
   sku: string | null;
   cantidad: number | null;
   slug: string | null;
   pedidoId: string | null;
   numero: string | null;
+  // Solo en avanzar_pedido (panel interno): estado al que pasa el pedido.
+  estadoNuevo: string | null;
 }
 
 export type EstadoAccion = 'pendiente' | 'ejecutando' | 'hecha' | 'descartada' | 'error';
@@ -36,6 +38,21 @@ export interface MensajeAsistente {
   fuentes?: string[];
   productos?: ProductoSugerido[];
   acciones?: AccionEnChat[];
+}
+
+// Sugerencia de descripción para el formulario de producto (panel de catálogo).
+export interface DatosDescripcion {
+  nombre: string;
+  categoria: string;
+  marca: string | null;
+  atributos: Record<string, string>;
+  opciones: Record<string, string[]>;
+  descripcionActual: string | null;
+}
+
+export interface DescripcionSugerida {
+  descripcionCorta: string;
+  descripcion: string;
 }
 
 export interface RespuestaAsistente {

@@ -23,6 +23,8 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 | Bodega | Despachar pedidos pagados y gestionar el inventario |
 | Gestor de catálogo | Productos, variantes, imágenes, categorías y marcas |
 
+En el panel, el asistente (Andi interno) responde según el rol: Soporte consulta pedidos y pagos ("¿por qué se rechazó el pago del pedido X?"), Bodega consulta los pedidos por despachar y el stock bajo mínimo, y prepara el avance de un despacho para confirmar con un botón, y Catálogo busca productos y genera descripciones de producto con IA desde el formulario (vista previa, se aplican solo si se aceptan).
+
 ## Arquitectura
 
 ```
@@ -167,6 +169,16 @@ Ollama corre en el equipo (fuera de Docker) para usar la GPU. Con Docker, `chrom
 - **Las acciones no las ejecuta el modelo.** Las herramientas `proponer_…` validan (variante, existencias, estado del pedido) y devuelven una propuesta; el chat muestra «Confirmar» / «Descartar» y, al confirmar, el frontend llama a la API de siempre (`POST /api/carrito/items`, `POST /api/pedidos/{id}/cancelar`). Además el servidor rechaza una propuesta si el cliente no pidió esa acción en sus últimos mensajes o si no eligió una opción con varias alternativas (talla, color…): el modelo no decide por el cliente.
 - Ollama no emite llamadas a herramientas cuando se le exige un formato JSON, así que con sesión hay hasta 3 rondas de herramientas sin formato y luego una respuesta final con formato. Sin sesión es una sola llamada.
 - La conversación del chat se guarda en `sessionStorage` por usuario y se borra al cerrar sesión.
+- **Panel interno (`/admin`):** el mismo chat cambia a `POST /api/asistente/panel/chat` (solo roles del panel). Las herramientas se ofrecen según el rol y se vuelven a comprobar al ejecutarlas; todas llaman con el token del empleado, así que Pedidos, Pagos e Inventario aplican sus permisos (Bodega solo ve pedidos pagados y sin correo del cliente). El prompt lista lo que el rol puede y **no** puede hacer: sin eso, el modelo llegaba a afirmar que había creado propuestas que su rol no permite.
+
+  | Rol | Herramientas |
+  |---|---|
+  | Soporte | `buscar_pedidos`, `consultar_pedido`, `consultar_pagos_pedido` |
+  | Bodega | `buscar_pedidos`, `consultar_pedido`, `consultar_stock_bajo`, `consultar_stock`, `proponer_avanzar_pedido` |
+  | Gestor de catálogo | `buscar_productos` |
+  | Administrador | Todas |
+
+- `POST /api/asistente/panel/descripcion` (Administrador y Gestor de catálogo) redacta descripción corta y larga a partir del formulario (nombre, categoría, marca, atributos, opciones de variantes), sin inventar materiales, medidas, precios ni existencias.
 - El prompt, el modelo, los sinónimos y los límites están en `Assistant_BACK/Assistant_Api/asistente.json`.
 - Seguridad: el modelo se fija en el servidor, solo se aceptan mensajes `user`/`assistant` (un cliente no puede inyectar `system`), el historial se recorta, el gateway limita a 10 preguntas por minuto y como máximo 2 respuestas se generan a la vez (las demás esperan turno o reciben 503).
 - Los documentos marcados con `BORRADOR` (devoluciones, tiempos de entrega, contacto, medidas de tallas) deben revisarse con el negocio.

@@ -199,6 +199,7 @@ services:
       Servicios__InventarioUrl: "http://inventory-api:8080/"
       Servicios__CarritoUrl: "http://cart-api:8080/"
       Servicios__PedidosUrl: "http://orders-api:8080/"
+      Servicios__PagosUrl: "http://payments-api:8080/"
       RabbitMQ__Host: host.docker.internal
       RabbitMQ__Usuario: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
@@ -208,6 +209,7 @@ services:
       - inventory-api
       - cart-api
       - orders-api
+      - payments-api
     restart: unless-stopped
 
   chroma:

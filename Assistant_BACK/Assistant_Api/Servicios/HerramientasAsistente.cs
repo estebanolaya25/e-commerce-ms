@@ -30,7 +30,7 @@ public class HerramientasAsistente(
     CarritoCliente carrito,
     CatalogoCliente catalogo,
     InventarioCliente inventario,
-    ILogger<HerramientasAsistente> logger)
+    ILogger<HerramientasAsistente> logger) : IConjuntoHerramientas
 {
     private const int PedidosRecientes = 5;
     private const int MaxUnidades = 10;
@@ -39,7 +39,7 @@ public class HerramientasAsistente(
     // Colombia no tiene horario de verano: UTC-5 fijo, sin depender de la base de zonas horarias del contenedor.
     private static readonly TimeSpan HoraColombia = TimeSpan.FromHours(-5);
 
-    private static readonly Dictionary<string, string> EstadosPedido = new()
+    internal static readonly Dictionary<string, string> EstadosPedido = new()
     {
         ["PendientePago"] = "Pendiente de pago",
         ["PagoEnProceso"] = "Pago en proceso",
@@ -113,6 +113,9 @@ public class HerramientasAsistente(
           }
         ]
         """).RootElement;
+
+    // Todas las herramientas del cliente aplican a cualquier usuario con sesión: Pedidos y Carrito filtran por su token.
+    public JsonElement DefinicionesPara(SesionHerramientas sesion) => Definiciones;
 
     /// <summary>Ejecuta una herramienta y devuelve el resultado como JSON para el modelo. Nunca lanza por errores de datos.</summary>
     public async Task<string> EjecutarAsync(string nombre, JsonElement argumentos, SesionHerramientas sesion, CancellationToken ct)
@@ -400,21 +403,21 @@ public class HerramientasAsistente(
         return faltan;
     }
 
-    private static string DescribirOpciones(Dictionary<string, string>? opciones) =>
+    internal static string DescribirOpciones(Dictionary<string, string>? opciones) =>
         opciones is null ? "" : string.Join(", ", opciones.Select(kv => $"{Capitalizar(kv.Key)} {kv.Value}"));
 
     private static string Capitalizar(string texto) => texto.Length == 0 ? texto : char.ToUpper(texto[0]) + texto[1..];
 
-    private static object Error(string mensaje) => new { error = mensaje };
+    internal static object Error(string mensaje) => new { error = mensaje };
 
-    private static string Estado(string estado) => EstadosPedido.GetValueOrDefault(estado, estado);
+    internal static string Estado(string estado) => EstadosPedido.GetValueOrDefault(estado, estado);
 
-    private static string Pesos(decimal valor) => valor.ToString("C0", Colombia);
+    internal static string Pesos(decimal valor) => valor.ToString("C0", Colombia);
 
-    private static string Fecha(DateTime utc) =>
+    internal static string Fecha(DateTime utc) =>
         new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToOffset(HoraColombia).ToString("d 'de' MMMM 'de' yyyy, h:mm tt", Colombia);
 
-    private static string? Texto(JsonElement argumentos, string clave) =>
+    internal static string? Texto(JsonElement argumentos, string clave) =>
         argumentos.ValueKind == JsonValueKind.Object && argumentos.TryGetProperty(clave, out var valor)
             ? valor.ValueKind switch
             {
@@ -424,7 +427,7 @@ public class HerramientasAsistente(
             }
             : null;
 
-    private static int? Entero(JsonElement argumentos, string clave)
+    internal static int? Entero(JsonElement argumentos, string clave)
     {
         if (argumentos.ValueKind != JsonValueKind.Object || !argumentos.TryGetProperty(clave, out var valor))
         {
@@ -438,7 +441,7 @@ public class HerramientasAsistente(
         };
     }
 
-    private static string Normalizar(string texto)
+    internal static string Normalizar(string texto)
     {
         var builder = new StringBuilder();
         foreach (var c in texto.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD))

@@ -55,6 +55,33 @@
           <div class="invalid-feedback">Solo minúsculas, números y guiones (por ejemplo camisa-azul-m).</div>
         </div>
         <div class="col-12">
+          <div class="asistente-descripcion">
+            <button type="button" class="btn btn-outline-primary btn-sm" (click)="generarDescripcion()" [disabled]="generandoDescripcion">
+              @if (generandoDescripcion) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Redactando…
+              } @else {
+                <i class="bi bi-stars"></i> {{ formulario.controls.descripcion.value.trim() ? 'Mejorar descripción con IA' : 'Generar descripción con IA' }}
+              }
+            </button>
+            <span class="texto-suave">Usa el nombre, la categoría, la marca, los atributos y las opciones de las variantes.</span>
+          </div>
+          @if (errorSugerencia) {
+            <div class="alert alert-danger py-2 mt-2 mb-0" role="alert">{{ errorSugerencia }}</div>
+          }
+          @if (sugerencia) {
+            <div class="sugerencia" role="region" aria-label="Descripción sugerida">
+              <p class="etiqueta"><i class="bi bi-stars"></i> Sugerencia del asistente — revise el texto antes de usarlo</p>
+              <p class="corta">{{ sugerencia.descripcionCorta }}</p>
+              <p class="larga">{{ sugerencia.descripcion }}</p>
+              <div class="acciones">
+                <button type="button" class="btn btn-primary btn-sm" (click)="usarSugerencia()">Usar este texto</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="generarDescripcion()">Generar otra</button>
+                <button type="button" class="btn btn-link btn-sm" (click)="descartarSugerencia()">Descartar</button>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="col-12">
           <label class="form-label" for="descripcionCorta">Descripción corta</label>
           <input id="descripcionCorta" class="form-control" formControlName="descripcionCorta" maxlength="500" placeholder="Se muestra en las tarjetas del listado">
         </div>

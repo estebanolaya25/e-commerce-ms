@@ -32,6 +32,8 @@ string pedidosUrl = builder.Configuration["Servicios:PedidosUrl"]
     ?? throw new InvalidOperationException("Falta configurar Servicios:PedidosUrl.");
 string carritoUrl = builder.Configuration["Servicios:CarritoUrl"]
     ?? throw new InvalidOperationException("Falta configurar Servicios:CarritoUrl.");
+string pagosUrl = builder.Configuration["Servicios:PagosUrl"]
+    ?? throw new InvalidOperationException("Falta configurar Servicios:PagosUrl.");
 
 builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ollama"));
 builder.Services.Configure<RagOptions>(builder.Configuration.GetSection("Rag"));
@@ -129,10 +131,21 @@ builder.Services
 builder.Services
     .AddHttpClient<CarritoCliente>(cliente => cliente.BaseAddress = new Uri(carritoUrl))
     .AddStandardResilienceHandler(ConfigurarResiliencia);
+// Panel interno: Pedidos, Pagos e Inventario con el token del empleado.
+builder.Services
+    .AddHttpClient<PanelPedidosCliente>(cliente => cliente.BaseAddress = new Uri(pedidosUrl))
+    .AddStandardResilienceHandler(ConfigurarResiliencia);
+builder.Services
+    .AddHttpClient<PagosCliente>(cliente => cliente.BaseAddress = new Uri(pagosUrl))
+    .AddStandardResilienceHandler(ConfigurarResiliencia);
+builder.Services
+    .AddHttpClient<StockCliente>(cliente => cliente.BaseAddress = new Uri(inventarioUrl))
+    .AddStandardResilienceHandler(ConfigurarResiliencia);
 
 builder.Services.AddScoped<KnowledgeBaseService>();
 builder.Services.AddScoped<ProductosIndiceService>();
 builder.Services.AddScoped<HerramientasAsistente>();
+builder.Services.AddScoped<HerramientasPanel>();
 builder.Services.AddSingleton<ColaOllama>();
 builder.Services.AddHostedService<IndexacionInicial>();
 

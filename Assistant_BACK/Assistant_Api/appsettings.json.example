@@ -15,7 +15,8 @@
     "CatalogoUrl": "http://localhost:5102/",
     "InventarioUrl": "http://localhost:5103/",
     "CarritoUrl": "http://localhost:5104/",
-    "PedidosUrl": "http://localhost:5105/"
+    "PedidosUrl": "http://localhost:5105/",
+    "PagosUrl": "http://localhost:5106/"
   },
   "RabbitMQ": {
     "Host": "localhost",

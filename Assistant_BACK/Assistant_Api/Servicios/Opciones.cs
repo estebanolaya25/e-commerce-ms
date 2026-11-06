@@ -5,6 +5,9 @@ public class OllamaOptions
     public string BaseUrl { get; set; } = "http://localhost:11434";
     public string Model { get; set; } = "qwen3.5:latest";
     public string? SystemPrompt { get; set; }
+
+    /// <summary>Instrucciones del asistente del panel interno (/admin), para el personal de la tienda.</summary>
+    public string? SystemPromptPanel { get; set; }
     public double Temperature { get; set; } = 0.2;
     public int ContextSize { get; set; } = 8192;
 

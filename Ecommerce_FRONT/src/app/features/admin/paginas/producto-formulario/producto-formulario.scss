@@ -234,3 +234,44 @@
   @include esqueleto;
   height: 24rem;
 }
+
+// Descripción sugerida por el asistente.
+.asistente-descripcion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.sugerencia {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed $primario;
+  border-radius: $radio;
+  background: $primario-claro;
+
+  p {
+    margin-bottom: 0.5rem;
+  }
+
+  .etiqueta {
+    color: $primario-oscuro;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .corta {
+    font-weight: 600;
+  }
+
+  .larga {
+    white-space: pre-line;
+  }
+
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
