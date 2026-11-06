@@ -28,6 +28,10 @@ string catalogoUrl = builder.Configuration["Servicios:CatalogoUrl"]
     ?? throw new InvalidOperationException("Falta configurar Servicios:CatalogoUrl.");
 string inventarioUrl = builder.Configuration["Servicios:InventarioUrl"]
     ?? throw new InvalidOperationException("Falta configurar Servicios:InventarioUrl.");
+string pedidosUrl = builder.Configuration["Servicios:PedidosUrl"]
+    ?? throw new InvalidOperationException("Falta configurar Servicios:PedidosUrl.");
+string carritoUrl = builder.Configuration["Servicios:CarritoUrl"]
+    ?? throw new InvalidOperationException("Falta configurar Servicios:CarritoUrl.");
 
 builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ollama"));
 builder.Services.Configure<RagOptions>(builder.Configuration.GetSection("Rag"));
@@ -118,9 +122,17 @@ builder.Services
 builder.Services
     .AddHttpClient<InventarioCliente>(cliente => cliente.BaseAddress = new Uri(inventarioUrl))
     .AddStandardResilienceHandler(ConfigurarResiliencia);
+// Pedidos y Carrito se llaman con el token del cliente (herramientas del asistente).
+builder.Services
+    .AddHttpClient<PedidosCliente>(cliente => cliente.BaseAddress = new Uri(pedidosUrl))
+    .AddStandardResilienceHandler(ConfigurarResiliencia);
+builder.Services
+    .AddHttpClient<CarritoCliente>(cliente => cliente.BaseAddress = new Uri(carritoUrl))
+    .AddStandardResilienceHandler(ConfigurarResiliencia);
 
 builder.Services.AddScoped<KnowledgeBaseService>();
 builder.Services.AddScoped<ProductosIndiceService>();
+builder.Services.AddScoped<HerramientasAsistente>();
 builder.Services.AddSingleton<ColaOllama>();
 builder.Services.AddHostedService<IndexacionInicial>();
 

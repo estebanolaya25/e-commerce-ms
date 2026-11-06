@@ -197,6 +197,8 @@ services:
       Rag__ChromaUrl: "http://chroma:8000"
       Servicios__CatalogoUrl: "http://catalog-api:8080/"
       Servicios__InventarioUrl: "http://inventory-api:8080/"
+      Servicios__CarritoUrl: "http://cart-api:8080/"
+      Servicios__PedidosUrl: "http://orders-api:8080/"
       RabbitMQ__Host: host.docker.internal
       RabbitMQ__Usuario: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
@@ -204,6 +206,8 @@ services:
       - chroma
       - catalog-api
       - inventory-api
+      - cart-api
+      - orders-api
     restart: unless-stopped
 
   chroma:

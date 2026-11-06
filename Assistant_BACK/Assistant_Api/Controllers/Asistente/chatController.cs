@@ -2,10 +2,12 @@ using Assistant_Api.Modelos;
 using Assistant_Api.Servicios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace Assistant_Api.Controllers.Asistente
 {
-    // Abierto sin sesión: en esta fase solo responde preguntas generales de la tienda con la base de conocimiento.
+    // Abierto sin sesión: responde preguntas generales y busca productos. Con sesión (JWT válido) el modelo puede además
+    // consultar los pedidos y el carrito del cliente, siempre con el token del propio cliente.
     // El gateway le aplica un límite de peticiones propio porque cada respuesta usa la GPU varios segundos.
     [Route("api/asistente/chat")]
     [ApiController]
@@ -30,7 +32,7 @@ namespace Assistant_Api.Controllers.Asistente
 
             try
             {
-                return Ok(await _ollama.ChatAsync(historial, ct));
+                return Ok(await _ollama.ChatAsync(historial, ContextoUsuario(), ct));
             }
             catch (AsistenteOcupadoException)
             {
@@ -47,6 +49,20 @@ namespace Assistant_Api.Controllers.Asistente
                 _logger.LogWarning("Ollama no respondió a tiempo");
                 return StatusCode(StatusCodes.Status504GatewayTimeout, new { mensaje = "El asistente tardó demasiado en responder. Intente de nuevo." });
             }
+        }
+
+        // Solo si la autenticación validó el JWT (firma, emisor, vencimiento): un token inválido se trata como sin sesión.
+        private ContextoUsuario? ContextoUsuario()
+        {
+            if (User.Identity?.IsAuthenticated != true)
+                return null;
+
+            string cabecera = Request.Headers[HeaderNames.Authorization].ToString();
+            const string prefijo = "Bearer ";
+            if (!cabecera.StartsWith(prefijo, StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            return new ContextoUsuario(cabecera[prefijo.Length..].Trim(), User.FindFirst("given_name")?.Value);
         }
     }
 }

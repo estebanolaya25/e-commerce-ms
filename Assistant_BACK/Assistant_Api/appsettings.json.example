@@ -13,7 +13,9 @@
   },
   "Servicios": {
     "CatalogoUrl": "http://localhost:5102/",
-    "InventarioUrl": "http://localhost:5103/"
+    "InventarioUrl": "http://localhost:5103/",
+    "CarritoUrl": "http://localhost:5104/",
+    "PedidosUrl": "http://localhost:5105/"
   },
   "RabbitMQ": {
     "Host": "localhost",

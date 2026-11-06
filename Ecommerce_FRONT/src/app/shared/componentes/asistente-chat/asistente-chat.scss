@@ -246,6 +246,94 @@
   }
 }
 
+.acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid $primario;
+    border-radius: $radio-sm;
+    background: $primario-claro;
+    font-size: 0.82rem;
+
+    &.hecha {
+      border-color: rgba($exito, 0.4);
+      background: $exito-claro;
+      .resultado { color: $exito; }
+    }
+
+    &.error {
+      border-color: rgba($peligro, 0.4);
+      background: $peligro-claro;
+      .resultado { color: $peligro; }
+    }
+
+    &.descartada {
+      border-color: $borde;
+      background: $fondo;
+      color: $texto-suave;
+    }
+  }
+
+  .descripcion {
+    font-weight: 600;
+
+    .bi {
+      margin-right: 0.25rem;
+      color: $primario;
+    }
+  }
+
+  .botones {
+    display: flex;
+    gap: 0.4rem;
+
+    button {
+      padding: 0.3rem 0.8rem;
+      border-radius: $radio-pildora;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+  }
+
+  .confirmar {
+    border: 0;
+    background: $primario;
+    color: #fff;
+
+    &:hover {
+      background: $primario-oscuro;
+    }
+  }
+
+  .descartar {
+    border: 1px solid $borde;
+    background: $superficie;
+    color: $texto-suave;
+  }
+
+  .resultado {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+
+    a {
+      margin-left: auto;
+      font-weight: 600;
+    }
+  }
+}
+
 .fuentes {
   display: block;
   margin-top: 0.45rem;

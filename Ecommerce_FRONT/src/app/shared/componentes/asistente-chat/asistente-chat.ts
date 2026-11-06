@@ -1,8 +1,11 @@
 import { Component, ElementRef, HostListener, OnDestroy, ViewChild } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { Subscription, filter } from 'rxjs';
-import { MensajeAsistente } from '../../../core/modelos/asistente.model';
+import { Observable, Subscription, distinctUntilChanged, filter, map, skip } from 'rxjs';
+import { AccionEnChat, MensajeAsistente } from '../../../core/modelos/asistente.model';
 import { AsistenteService } from '../../../core/servicios/asistente.service';
+import { CarritoService } from '../../../core/servicios/carrito.service';
+import { PedidosService } from '../../../core/servicios/pedidos.service';
+import { SesionService } from '../../../core/servicios/sesion.service';
 import { mensajeDeError } from '../../../core/utilidades/errores-http';
 
 const CLAVE_HISTORIAL = 'tienda.asistente.historial';
@@ -10,6 +13,8 @@ const MAX_CARACTERES = 1000;
 
 // Chat flotante con el asistente virtual. Vive en la raíz de la app: la conversación sigue al cambiar de página
 // y se guarda en sessionStorage para que sobreviva a recargar la pestaña (no a cerrarla).
+// Con sesión, la conversación puede traer datos de los pedidos del cliente: se guarda por usuario y se borra al
+// cerrar sesión, para que otra persona en el mismo navegador no la vea.
 @Component({
   selector: 'app-asistente-chat',
   standalone: false,
@@ -33,11 +38,33 @@ export class AsistenteChat implements OnDestroy {
   respondiendo = false;
   error: string | null = null;
   texto = '';
-  mensajes: MensajeAsistente[] = this.leerHistorial();
+  private idUsuario: string | null;
+  mensajes: MensajeAsistente[];
 
   private readonly navegacion: Subscription;
+  private readonly cambioDeSesion: Subscription;
 
-  constructor(private asistente: AsistenteService, router: Router) {
+  constructor(
+    private asistente: AsistenteService,
+    private carrito: CarritoService,
+    private pedidos: PedidosService,
+    sesion: SesionService,
+    router: Router
+  ) {
+    this.idUsuario = sesion.usuario?.id ?? null;
+    this.mensajes = this.leerHistorial();
+
+    this.cambioDeSesion = sesion.usuario$
+      .pipe(map(usuario => usuario?.id ?? null), distinctUntilChanged(), skip(1))
+      .subscribe(id => {
+        if (this.idUsuario !== null) {
+          this.borrarHistorial(this.idUsuario);
+        }
+        this.idUsuario = id;
+        this.mensajes = this.leerHistorial();
+        this.error = null;
+      });
+
     // El panel interno tiene su propio flujo de trabajo; en esta fase el asistente es solo para clientes.
     const actualizarVisibilidad = (url: string) => (this.visible = !url.startsWith('/admin'));
     actualizarVisibilidad(router.url);
@@ -48,6 +75,48 @@ export class AsistenteChat implements OnDestroy {
 
   ngOnDestroy(): void {
     this.navegacion.unsubscribe();
+    this.cambioDeSesion.unsubscribe();
+  }
+
+  // La acción la ejecuta el frontend con la sesión del cliente, por la misma API que usan el carrito y «Mis pedidos».
+  confirmar(accion: AccionEnChat): void {
+    if (accion.estado !== 'pendiente') {
+      return;
+    }
+    let operacion: Observable<unknown>;
+    let exito: string;
+    if (accion.tipo === 'agregar_carrito' && accion.sku && accion.cantidad) {
+      operacion = this.carrito.agregar(accion.sku, accion.cantidad);
+      exito = 'Agregado al carrito.';
+    } else if (accion.tipo === 'cancelar_pedido' && accion.pedidoId) {
+      operacion = this.pedidos.cancelar(accion.pedidoId);
+      exito = accion.numero ? `Pedido ${accion.numero} cancelado.` : 'Pedido cancelado.';
+    } else {
+      accion.estado = 'error';
+      accion.mensaje = 'No se pudo realizar esta acción.';
+      return;
+    }
+
+    accion.estado = 'ejecutando';
+    operacion.subscribe({
+      next: () => {
+        accion.estado = 'hecha';
+        accion.mensaje = exito;
+        this.guardarHistorial();
+      },
+      error: error => {
+        accion.estado = 'error';
+        accion.mensaje = mensajeDeError(error, 'No se pudo realizar la acción. Intente de nuevo.');
+        this.guardarHistorial();
+      }
+    });
+  }
+
+  descartar(accion: AccionEnChat): void {
+    if (accion.estado === 'pendiente') {
+      accion.estado = 'descartada';
+      this.guardarHistorial();
+    }
   }
 
   alternar(): void {
@@ -154,8 +223,9 @@ export class AsistenteChat implements OnDestroy {
           role: 'assistant',
           content: respuesta.reply,
           // Si recomendó productos, las fuentes de la base de conocimiento no aportan: se muestran las tarjetas.
-          fuentes: respuesta.productos?.length ? [] : respuesta.sources,
-          productos: respuesta.productos ?? []
+          fuentes: respuesta.productos?.length || respuesta.acciones?.length ? [] : respuesta.sources,
+          productos: respuesta.productos ?? [],
+          acciones: (respuesta.acciones ?? []).map(accion => ({ ...accion, estado: 'pendiente' as const }))
         }];
         this.respondiendo = false;
         this.guardarHistorial();
@@ -183,18 +253,41 @@ export class AsistenteChat implements OnDestroy {
     });
   }
 
+  private clave(idUsuario: string | null): string {
+    return `${CLAVE_HISTORIAL}.${idUsuario ?? 'invitado'}`;
+  }
+
   private leerHistorial(): MensajeAsistente[] {
     try {
-      const guardado = JSON.parse(sessionStorage.getItem(CLAVE_HISTORIAL) ?? '[]');
-      return Array.isArray(guardado) ? guardado : [];
+      const guardado = JSON.parse(sessionStorage.getItem(this.clave(this.idUsuario)) ?? '[]');
+      if (!Array.isArray(guardado)) {
+        return [];
+      }
+      // Una acción que quedó a medias al recargar la página se vuelve a ofrecer (el cliente decide de nuevo).
+      for (const mensaje of guardado as MensajeAsistente[]) {
+        for (const accion of mensaje.acciones ?? []) {
+          if (accion.estado === 'ejecutando') {
+            accion.estado = 'pendiente';
+          }
+        }
+      }
+      return guardado;
     } catch {
       return [];
     }
   }
 
+  private borrarHistorial(idUsuario: string): void {
+    try {
+      sessionStorage.removeItem(this.clave(idUsuario));
+    } catch {
+      // Sin almacenamiento: no hay nada que borrar.
+    }
+  }
+
   private guardarHistorial(): void {
     try {
-      sessionStorage.setItem(CLAVE_HISTORIAL, JSON.stringify(this.mensajes));
+      sessionStorage.setItem(this.clave(this.idUsuario), JSON.stringify(this.mensajes));
     } catch {
       // Sin almacenamiento (modo privado o bloqueado): la conversación solo dura mientras la página esté abierta.
     }

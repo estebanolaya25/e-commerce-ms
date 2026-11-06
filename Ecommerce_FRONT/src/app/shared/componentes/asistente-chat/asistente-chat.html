@@ -66,6 +66,46 @@
                   }
                 </ul>
               }
+              @if (mensaje.acciones?.length) {
+                <ul class="acciones">
+                  @for (accion of mensaje.acciones; track $index) {
+                    <li [class]="accion.estado">
+                      <span class="descripcion">
+                        <i class="bi" [class.bi-cart-plus]="accion.tipo === 'agregar_carrito'"
+                           [class.bi-x-octagon]="accion.tipo === 'cancelar_pedido'" aria-hidden="true"></i>
+                        {{ accion.descripcion }}
+                      </span>
+                      @switch (accion.estado) {
+                        @case ('pendiente') {
+                          <span class="botones">
+                            <button type="button" class="confirmar" (click)="confirmar(accion)">Confirmar</button>
+                            <button type="button" class="descartar" (click)="descartar(accion)">Descartar</button>
+                          </span>
+                        }
+                        @case ('ejecutando') {
+                          <span class="resultado"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Procesando…</span>
+                        }
+                        @case ('hecha') {
+                          <span class="resultado" role="status">
+                            <i class="bi bi-check-circle-fill"></i> {{ accion.mensaje }}
+                            @if (accion.tipo === 'agregar_carrito') {
+                              <a routerLink="/carrito" (click)="alAbrirProducto()">Ver carrito</a>
+                            } @else {
+                              <a routerLink="/pedidos" (click)="alAbrirProducto()">Mis pedidos</a>
+                            }
+                          </span>
+                        }
+                        @case ('descartada') {
+                          <span class="resultado">Descartada</span>
+                        }
+                        @case ('error') {
+                          <span class="resultado" role="alert"><i class="bi bi-exclamation-triangle"></i> {{ accion.mensaje }}</span>
+                        }
+                      }
+                    </li>
+                  }
+                </ul>
+              }
               @if (mensaje.fuentes?.length) {
                 <small class="fuentes"><i class="bi bi-journal-text"></i> {{ mensaje.fuentes!.join(' · ') }}</small>
               }
