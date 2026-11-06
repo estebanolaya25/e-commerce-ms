@@ -48,8 +48,10 @@ public class OllamaService(
     /// Sin sesión: una sola llamada con salida JSON. Con sesión: primero el modelo puede pedir herramientas (pedidos,
     /// carrito, propuestas de acción) sin formato forzado —Ollama no emite llamadas a herramientas si se le exige un JSON—
     /// y luego, si hizo falta, una llamada final con el formato JSON y los resultados ya en la conversación.
+    /// Con <paramref name="emitir"/>, la respuesta final se transmite por partes y las herramientas avisan qué consultan.
     /// </summary>
-    public async Task<ChatResponse> ChatAsync(IReadOnlyList<MensajeChat> historial, ContextoUsuario? usuario, CancellationToken ct)
+    public async Task<ChatResponse> ChatAsync(IReadOnlyList<MensajeChat> historial, ContextoUsuario? usuario, CancellationToken ct,
+        EmitirEvento? emitir = null)
     {
         // Se busca con cada una de las dos últimas preguntas y con ambas juntas, para soportar preguntas de
         // seguimiento ("¿y si es a Medellín?") sin que el ruido de una desplace lo que la otra sí encuentra.
@@ -81,8 +83,8 @@ public class OllamaService(
         try
         {
             contenido = sesion is null
-                ? (await LlamarAsync(messages, formato: true, herramientas: null, ct))?.Content
-                : await ConversarConHerramientasAsync(messages, sesion, herramientas, ct);
+                ? await RespuestaFinalAsync(messages, emitir, ct)
+                : await ConversarConHerramientasAsync(messages, sesion, herramientas, emitir, ct);
         }
         finally
         {
@@ -112,7 +114,8 @@ public class OllamaService(
     /// (filtradas por los roles del empleado), sin tarjetas de productos y con la base de conocimiento como referencia
     /// de las políticas de la tienda.
     /// </summary>
-    public async Task<ChatResponse> ChatPanelAsync(IReadOnlyList<MensajeChat> historial, ContextoUsuario usuario, CancellationToken ct)
+    public async Task<ChatResponse> ChatPanelAsync(IReadOnlyList<MensajeChat> historial, ContextoUsuario usuario, CancellationToken ct,
+        EmitirEvento? emitir = null)
     {
         var lastQuestions = historial.Where(m => m.Role == "user").TakeLast(2).Select(m => m.Content).ToList();
         var combinedQuestions = string.Join("\n", lastQuestions);
@@ -122,7 +125,7 @@ public class OllamaService(
         messages.AddRange(historial.Select(m => new OllamaMessage(m.Role, m.Content)));
         var sesion = new SesionHerramientas(usuario, historial.Where(m => m.Role == "user").TakeLast(3).Select(m => m.Content));
 
-        var contenido = await ConTurnoAsync(() => ConversarConHerramientasAsync(messages, sesion, herramientasPanel, ct), ct);
+        var contenido = await ConTurnoAsync(() => ConversarConHerramientasAsync(messages, sesion, herramientasPanel, emitir, ct), ct);
         var (respuesta, _) = LeerSalida(contenido);
         return new ChatResponse(respuesta, [], [], sesion.Acciones);
     }
@@ -284,7 +287,7 @@ public class OllamaService(
     /// (ahorra una llamada en las preguntas que no necesitan datos del cliente); si no, se hace la llamada final con formato.
     /// </summary>
     private async Task<string?> ConversarConHerramientasAsync(List<OllamaMessage> messages, SesionHerramientas sesion,
-        IConjuntoHerramientas conjunto, CancellationToken ct)
+        IConjuntoHerramientas conjunto, EmitirEvento? emitir, CancellationToken ct)
     {
         var definiciones = conjunto.DefinicionesPara(sesion);
         var usoHerramientas = false;
@@ -306,14 +309,83 @@ public class OllamaService(
             {
                 var nombre = llamada.Function?.Name ?? string.Empty;
                 var argumentos = llamada.Function?.Arguments ?? default;
+                if (emitir is not null)
+                {
+                    await emitir(EventoChat.Estado(DescribirHerramienta(nombre)));
+                }
                 var resultado = await conjunto.EjecutarAsync(nombre, argumentos, sesion, ct);
                 logger.LogInformation("Herramienta {Herramienta} ejecutada", nombre);
                 messages.Add(new OllamaMessage("tool", resultado, ToolName: nombre));
             }
         }
 
-        return (await LlamarAsync(messages, formato: true, herramientas: null, ct))?.Content;
+        return await RespuestaFinalAsync(messages, emitir, ct);
     }
+
+    /// <summary>Llamada con el formato JSON: transmitida por partes si hay a quién emitirle, completa si no.</summary>
+    private async Task<string?> RespuestaFinalAsync(List<OllamaMessage> messages, EmitirEvento? emitir, CancellationToken ct) =>
+        emitir is null
+            ? (await LlamarAsync(messages, formato: true, herramientas: null, ct))?.Content
+            : await LlamarConStreamingAsync(messages, emitir, ct);
+
+    /// <summary>
+    /// Ollama con stream: true envía una línea JSON por fragmento ({"message":{"content":"…"},"done":false}). El contenido
+    /// junto es el JSON de la respuesta; de él se va extrayendo el campo "respuesta" para emitirlo mientras se genera.
+    /// Devuelve el JSON completo para leer después los productos.
+    /// </summary>
+    private async Task<string> LlamarConStreamingAsync(List<OllamaMessage> messages, EmitirEvento emitir, CancellationToken ct)
+    {
+        var payload = new OllamaChatRequest(_options.Model, messages, Stream: true, _options.Think,
+            new OllamaChatOptions(_options.Temperature, _options.ContextSize), FormatoRespuesta, null, _options.KeepAlive);
+
+        using var peticion = new HttpRequestMessage(HttpMethod.Post, "/api/chat") { Content = JsonContent.Create(payload) };
+        using var response = await http.SendAsync(peticion, HttpCompletionOption.ResponseHeadersRead, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(ct);
+            throw new HttpRequestException($"Ollama respondió {(int)response.StatusCode}: {error}");
+        }
+
+        var completo = new StringBuilder();
+        var extractor = new ExtractorRespuesta();
+        using var lector = new StreamReader(await response.Content.ReadAsStreamAsync(ct));
+        while (await lector.ReadLineAsync(ct) is { } linea)
+        {
+            if (string.IsNullOrWhiteSpace(linea))
+            {
+                continue;
+            }
+            var fragmento = JsonSerializer.Deserialize<OllamaChatResponse>(linea);
+            var contenido = fragmento?.Message?.Content;
+            if (!string.IsNullOrEmpty(contenido))
+            {
+                completo.Append(contenido);
+                var texto = extractor.Agregar(contenido);
+                if (texto.Length > 0)
+                {
+                    await emitir(EventoChat.Fragmento(texto));
+                }
+            }
+            if (fragmento?.Done == true)
+            {
+                break;
+            }
+        }
+        return completo.ToString();
+    }
+
+    private static string DescribirHerramienta(string nombre) => nombre switch
+    {
+        "consultar_mis_pedidos" => "Revisando tus pedidos…",
+        "consultar_pedido" => "Consultando el pedido…",
+        "consultar_carrito" => "Revisando el carrito…",
+        "buscar_pedidos" => "Buscando pedidos…",
+        "consultar_pagos_pedido" => "Consultando los pagos…",
+        "consultar_stock_bajo" or "consultar_stock" => "Consultando el inventario…",
+        "buscar_productos" => "Buscando en el catálogo…",
+        _ when nombre.StartsWith("proponer_", StringComparison.Ordinal) => "Preparando la propuesta…",
+        _ => "Consultando…"
+    };
 
     private Task<OllamaMessage?> LlamarAsync(List<OllamaMessage> messages, bool formato, JsonElement? herramientas, CancellationToken ct) =>
         LlamarAsync(messages, formato ? FormatoRespuesta : null, herramientas, _options.Temperature, ct);
@@ -322,7 +394,7 @@ public class OllamaService(
         double temperatura, CancellationToken ct)
     {
         var payload = new OllamaChatRequest(_options.Model, messages, Stream: false, _options.Think,
-            new OllamaChatOptions(temperatura, _options.ContextSize), formato, herramientas);
+            new OllamaChatOptions(temperatura, _options.ContextSize), formato, herramientas, _options.KeepAlive);
 
         using var response = await http.PostAsJsonAsync("/api/chat", payload, ct);
         if (!response.IsSuccessStatusCode)
@@ -522,7 +594,8 @@ public class OllamaService(
         [property: JsonPropertyName("think"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Think,
         [property: JsonPropertyName("options")] OllamaChatOptions Options,
         [property: JsonPropertyName("format"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Format,
-        [property: JsonPropertyName("tools"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Tools);
+        [property: JsonPropertyName("tools"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] JsonElement? Tools,
+        [property: JsonPropertyName("keep_alive"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? KeepAlive = null);
 
     private record OllamaChatOptions(
         [property: JsonPropertyName("temperature")] double Temperature,
@@ -533,7 +606,8 @@ public class OllamaService(
         [property: JsonPropertyName("productos")] List<string>? Productos);
 
     private record OllamaChatResponse(
-        [property: JsonPropertyName("message")] OllamaMessage? Message);
+        [property: JsonPropertyName("message")] OllamaMessage? Message,
+        [property: JsonPropertyName("done")] bool Done = false);
 }
 
 /// <summary>

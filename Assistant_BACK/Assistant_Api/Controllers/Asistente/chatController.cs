@@ -22,6 +22,23 @@ namespace Assistant_Api.Controllers.Asistente
             _logger = logger;
         }
 
+        // Igual que Preguntar, pero transmite la respuesta como Server-Sent Events mientras el modelo la genera.
+        [HttpPost]
+        [Route("stream")]
+        public async Task PreguntarTransmitido(ChatRequest request, CancellationToken ct)
+        {
+            List<MensajeChat>? historial = _ollama.NormalizarHistorial(request.Messages);
+            if (historial == null)
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                await Response.WriteAsJsonAsync(new { mensaje = "Debe enviar una pregunta." }, ct);
+                return;
+            }
+
+            ContextoUsuario? usuario = ContextoHttp.Usuario(HttpContext);
+            await TransmisionSse.TransmitirAsync(Response, emitir => _ollama.ChatAsync(historial, usuario, ct, emitir), _logger, ct);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Preguntar(ChatRequest request, CancellationToken ct)
         {

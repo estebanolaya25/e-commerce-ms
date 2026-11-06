@@ -15,7 +15,7 @@
       </button>
     </header>
 
-    <div class="mensajes" #lista aria-live="polite">
+    <div class="mensajes" #lista aria-live="polite" [attr.aria-busy]="respondiendo">
       <div class="burbuja asistente">
         <p>{{ saludo }}</p>
       </div>
@@ -31,8 +31,16 @@
       @for (mensaje of mensajes; track $index) {
         @if (mensaje.role === 'user') {
           <div class="burbuja usuario">{{ mensaje.content }}</div>
+        } @else if (mensaje.enCurso && !mensaje.content) {
+          <!-- Aún no llega texto: puntos animados y, si está usando herramientas, qué consulta. -->
+          <div class="burbuja asistente escribiendo" role="status" aria-label="Andi está escribiendo">
+            <span class="puntos"><span></span><span></span><span></span></span>
+            @if (mensaje.progreso) {
+              <span class="progreso">{{ mensaje.progreso }}</span>
+            }
+          </div>
         } @else {
-          <div class="burbuja asistente">
+          <div class="burbuja asistente" [class.en-curso]="mensaje.enCurso">
             <div [innerHTML]="formatear(mensaje.content)"></div>
             @if (mensaje.productos?.length) {
               <ul class="productos">
@@ -113,12 +121,6 @@
             }
           </div>
         }
-      }
-
-      @if (respondiendo) {
-        <div class="burbuja asistente escribiendo" aria-label="Andi está escribiendo">
-          <span></span><span></span><span></span>
-        </div>
       }
 
       @if (error) {

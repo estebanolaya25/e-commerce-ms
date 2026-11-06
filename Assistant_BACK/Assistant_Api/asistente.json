@@ -16,6 +16,7 @@
     "Temperature": 0.2,
     "ContextSize": 8192,
     "Think": false,
+    "KeepAlive": "30m",
     "MaxConcurrencia": 2,
     "SegundosEsperaTurno": 30
   },

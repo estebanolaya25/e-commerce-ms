@@ -34,6 +34,22 @@ namespace Assistant_Api.Controllers.Asistente
             }, ct);
 
         [HttpPost]
+        [Route("chat/stream")]
+        public async Task ChatTransmitido(ChatRequest request, CancellationToken ct)
+        {
+            List<MensajeChat>? historial = _ollama.NormalizarHistorial(request.Messages);
+            ContextoUsuario? usuario = ContextoHttp.Usuario(HttpContext);
+            if (historial == null || usuario == null)
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                await Response.WriteAsJsonAsync(new { mensaje = "Debe enviar una pregunta." }, ct);
+                return;
+            }
+
+            await TransmisionSse.TransmitirAsync(Response, emitir => _ollama.ChatPanelAsync(historial, usuario, ct, emitir), _logger, ct);
+        }
+
+        [HttpPost]
         [Authorize(Roles = RolesTienda.GestionCatalogo)]
         [Route("descripcion")]
         public Task<IActionResult> Descripcion(DescripcionRequest request, CancellationToken ct) =>

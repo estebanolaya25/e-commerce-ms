@@ -17,6 +17,12 @@ public class OllamaOptions
     /// </summary>
     public bool? Think { get; set; } = false;
 
+    /// <summary>
+    /// Cuánto mantiene Ollama el modelo en memoria tras la última petición (p. ej. "30m"; "-1" = siempre). Por defecto
+    /// Ollama lo descarga a los 5 minutos y la siguiente pregunta espera varios segundos a que vuelva a cargar.
+    /// </summary>
+    public string? KeepAlive { get; set; } = "30m";
+
     /// <summary>Respuestas que se generan a la vez. El resto espera turno para no saturar la GPU.</summary>
     public int MaxConcurrencia { get; set; } = 2;
 

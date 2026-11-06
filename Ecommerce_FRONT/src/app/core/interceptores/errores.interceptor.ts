@@ -12,8 +12,8 @@ export class ErroresInterceptor implements HttpInterceptor {
   private readonly ultimoAviso = new Map<string, number>();
 
   // Login, registro y el chat del asistente ya muestran el error en su propia pantalla.
-  private readonly rutasConMensajePropio = [`${API.auth}/login`, `${API.auth}/registro`, `${API.asistente}/chat`,
-    `${API.asistente}/panel/chat`, `${API.asistente}/panel/descripcion`];
+  private readonly rutasConMensajePropio = [`${API.auth}/login`, `${API.auth}/registro`, `${API.asistente}/chat/stream`,
+    `${API.asistente}/panel/chat/stream`, `${API.asistente}/panel/descripcion`];
 
   constructor(private avisos: AvisosService) {}
 

@@ -263,30 +263,62 @@ export class AsistenteChat implements OnDestroy {
     this.guardarHistorial();
     this.bajarAlFinal();
 
-    const peticion: Observable<RespuestaAsistente> = this.modo === 'panel'
-      ? this.asistente.preguntarPanel(this.mensajes)
-      : this.asistente.preguntar(this.mensajes);
-    peticion.subscribe({
-      next: respuesta => {
-        this.mensajes = [...this.mensajes, {
-          role: 'assistant',
-          content: respuesta.reply,
-          // Si recomendó productos, las fuentes de la base de conocimiento no aportan: se muestran las tarjetas.
-          fuentes: respuesta.productos?.length || respuesta.acciones?.length ? [] : respuesta.sources,
-          productos: respuesta.productos ?? [],
-          acciones: (respuesta.acciones ?? []).map(accion => ({ ...accion, estado: 'pendiente' as const }))
-        }];
-        this.respondiendo = false;
-        this.guardarHistorial();
-        this.bajarAlFinal();
-        this.enfocarEntrada();
+    // La respuesta se va escribiendo en esta burbuja a medida que llega; al final se completa con productos y acciones.
+    const historial = this.mensajes;
+    const enCurso: MensajeAsistente = { role: 'assistant', content: '', enCurso: true };
+    this.mensajes = [...historial, enCurso];
+    let terminada = false;
+
+    const fallar = (mensaje: string) => {
+      terminada = true;
+      this.mensajes = this.mensajes.filter(m => m !== enCurso);
+      this.error = mensaje;
+      this.respondiendo = false;
+      this.bajarAlFinal();
+    };
+
+    this.asistente.preguntarEnVivo(historial, this.modo).subscribe({
+      next: evento => {
+        switch (evento.tipo) {
+          case 'estado':
+            enCurso.progreso = evento.texto;
+            break;
+          case 'texto':
+            enCurso.content += evento.texto;
+            enCurso.progreso = undefined;
+            this.bajarAlFinal();
+            break;
+          case 'fin':
+            terminada = true;
+            this.completar(enCurso, evento.respuesta);
+            break;
+          case 'error':
+            fallar(evento.mensaje);
+            break;
+        }
       },
-      error: error => {
-        this.error = mensajeDeError(error, 'No pude responder en este momento. Intente de nuevo.');
-        this.respondiendo = false;
-        this.bajarAlFinal();
+      error: error => fallar(mensajeDeError(error, 'No pude responder en este momento. Intente de nuevo.')),
+      complete: () => {
+        if (!terminada) {
+          fallar('La respuesta se interrumpió. Intente de nuevo.');
+        }
       }
     });
+  }
+
+  private completar(mensaje: MensajeAsistente, respuesta: RespuestaAsistente): void {
+    mensaje.content = respuesta.reply;
+    // Si recomendó productos o propuso acciones, las fuentes de la base de conocimiento no aportan.
+    mensaje.fuentes = respuesta.productos?.length || respuesta.acciones?.length ? [] : respuesta.sources;
+    mensaje.productos = respuesta.productos ?? [];
+    mensaje.acciones = (respuesta.acciones ?? []).map(accion => ({ ...accion, estado: 'pendiente' as const }));
+    delete mensaje.enCurso;
+    delete mensaje.progreso;
+    this.mensajes = [...this.mensajes];
+    this.respondiendo = false;
+    this.guardarHistorial();
+    this.bajarAlFinal();
+    this.enfocarEntrada();
   }
 
   private enfocarEntrada(): void {
@@ -336,7 +368,8 @@ export class AsistenteChat implements OnDestroy {
 
   private guardarHistorial(): void {
     try {
-      sessionStorage.setItem(this.clave(this.idUsuario), JSON.stringify(this.mensajes));
+      // Una respuesta a medias no se guarda: si se recarga la página, la pregunta queda lista para reintentar.
+      sessionStorage.setItem(this.clave(this.idUsuario), JSON.stringify(this.mensajes.filter(m => !m.enCurso)));
     } catch {
       // Sin almacenamiento (modo privado o bloqueado): la conversación solo dura mientras la página esté abierta.
     }

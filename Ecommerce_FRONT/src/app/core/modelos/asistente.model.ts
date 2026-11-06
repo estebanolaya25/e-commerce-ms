@@ -38,7 +38,17 @@ export interface MensajeAsistente {
   fuentes?: string[];
   productos?: ProductoSugerido[];
   acciones?: AccionEnChat[];
+  // Respuesta que se está recibiendo por partes; progreso = qué está consultando ("Revisando tus pedidos…").
+  enCurso?: boolean;
+  progreso?: string;
 }
+
+// Eventos de la respuesta transmitida (SSE).
+export type EventoAsistente =
+  | { tipo: 'estado'; texto: string }
+  | { tipo: 'texto'; texto: string }
+  | { tipo: 'fin'; respuesta: RespuestaAsistente }
+  | { tipo: 'error'; mensaje: string };
 
 // Sugerencia de descripción para el formulario de producto (panel de catálogo).
 export interface DatosDescripcion {
