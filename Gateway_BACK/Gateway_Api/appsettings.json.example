@@ -36,6 +36,10 @@
     "Pagos": {
       "PermitLimit": "60",
       "VentanaSegundos": "60"
+    },
+    "Asistente": {
+      "PermitLimit": "10",
+      "VentanaSegundos": "60"
     }
   }
 }

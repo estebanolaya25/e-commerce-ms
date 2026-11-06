@@ -79,6 +79,19 @@
         "Match": {
           "Path": "/api/pagos/swagger/{**resto}"
         }
+      },
+      "asistente": {
+        "ClusterId": "asistente",
+        "RateLimiterPolicy": "asistente",
+        "Match": {
+          "Path": "/api/asistente/{**resto}"
+        }
+      },
+      "asistente-swagger": {
+        "ClusterId": "asistente",
+        "Match": {
+          "Path": "/api/asistente/swagger/{**resto}"
+        }
       }
     },
     "Clusters": {
@@ -175,6 +188,25 @@
         "Destinations": {
           "pagos1": {
             "Address": "http://localhost:5106/"
+          }
+        }
+      },
+      "asistente": {
+        "HttpRequest": {
+          "ActivityTimeout": "00:03:00"
+        },
+        "HealthCheck": {
+          "Active": {
+            "Enabled": true,
+            "Interval": "00:00:10",
+            "Timeout": "00:00:05",
+            "Policy": "ConsecutiveFailures",
+            "Path": "/health"
+          }
+        },
+        "Destinations": {
+          "asistente1": {
+            "Address": "http://localhost:5107/"
           }
         }
       }

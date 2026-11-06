@@ -67,7 +67,9 @@ var politicasRateLimit = new (string Nombre, string Seccion, int Limite)[]
     ("pedidos", "Pedidos", 120),
     ("pagos", "Pagos", 60),
     // Panel de usuarios: va a Auth, pero no debe gastar el cupo estricto pensado para login y registro.
-    ("administracion", "Administracion", 120)
+    ("administracion", "Administracion", 120),
+    // Cada respuesta del asistente ocupa la GPU varios segundos: cupo bajo para que nadie lo acapare.
+    ("asistente", "Asistente", 10)
 };
 
 builder.Services.AddRateLimiter(options =>

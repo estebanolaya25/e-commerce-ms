@@ -11,8 +11,8 @@ import { AvisosService } from '../servicios/avisos.service';
 export class ErroresInterceptor implements HttpInterceptor {
   private readonly ultimoAviso = new Map<string, number>();
 
-  // Login y registro ya muestran el error dentro del formulario.
-  private readonly rutasConMensajePropio = [`${API.auth}/login`, `${API.auth}/registro`];
+  // Login, registro y el chat del asistente ya muestran el error en su propia pantalla.
+  private readonly rutasConMensajePropio = [`${API.auth}/login`, `${API.auth}/registro`, `${API.asistente}/chat`];
 
   constructor(private avisos: AvisosService) {}
 

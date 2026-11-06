@@ -12,6 +12,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 - Registro, inicio de sesión y renovación automática de la sesión.
 - Carrito, checkout con **reserva de stock por 15 minutos** y pago con tarjeta (pasarela simulada).
 - Historial de pedidos con línea de tiempo de estados y cancelación mientras no estén pagados.
+- Asistente virtual (Andi) en un chat flotante: responde preguntas de envíos, pagos, pedidos, devoluciones, tallas y cuenta con RAG sobre una base de conocimiento propia.
 
 **Panel interno (`/admin`) por roles**
 
@@ -34,6 +35,8 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
      │       │    │       │          │          │          │
   SQL Server Postgres Redis SQL Server Redis  SQL Server  SQL Server
 
+   ASISTENTE :5107 ──► Ollama (host, :11434)  +  ChromaDB (:8000)
+
    ══════════════════════ RabbitMQ (eventos) ══════════════════════
    Catálogo ──VarianteCreada──────────────────────────► Inventario
    Pedidos  ──PedidoCreado────────────────────────────► Carrito
@@ -49,6 +52,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 | **Carrito** | Carrito por usuario con precios y disponibilidad | Redis |
 | **Pedidos** | Checkout y orquestación de la saga del pedido | SQL Server |
 | **Pagos** | Pasarela de pagos simulada | SQL Server |
+| **Asistente** | Chat con RAG: busca en la base de conocimiento y responde con un modelo local | ChromaDB (vectores) |
 
 ### Decisiones de diseño
 
@@ -72,6 +76,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 | Caché | Redis |
 | Seguridad | JWT, refresh tokens con rotación, PBKDF2 para contraseñas |
 | Frontend | Angular 21 (NgModules), RxJS, Bootstrap 5, SCSS |
+| IA | Ollama (`qwen3.5`, `nomic-embed-text`), ChromaDB |
 | Contenedores | Docker Compose |
 
 ## Estructura del repositorio
@@ -83,13 +88,14 @@ Inventory_BACK/    Inventario y reservas
 Cart_BACK/         Carrito
 Orders_BACK/       Pedidos (orquestador)
 Payments_BACK/     Pagos simulados
+Assistant_BACK/    Asistente virtual (RAG con Ollama y ChromaDB)
 Gateway_BACK/      API Gateway (YARP)
 Ecommerce_FRONT/   Frontend Angular
 Postman/           Colección de pruebas de la API
 Semillas/          Generadores de datos de ejemplo
 ```
 
-Cada servicio sigue la misma estructura de capas: `*_Api`, `CapaNegocios`, `CapaDatos`, `CapaDTO` y, cuando aplica, `BaseDatos/` con los scripts SQL.
+Cada servicio sigue la misma estructura de capas: `*_Api`, `CapaNegocios`, `CapaDatos`, `CapaDTO` y, cuando aplica, `BaseDatos/` con los scripts SQL. El asistente es la excepción: no tiene base de datos relacional y es un solo proyecto (`Assistant_Api`).
 
 ## Cómo ejecutarlo
 
@@ -99,6 +105,7 @@ Cada servicio sigue la misma estructura de capas: `*_Api`, `CapaNegocios`, `Capa
 - SQL Server, PostgreSQL, Redis y RabbitMQ
 - Python 3 (para generar los datos de ejemplo)
 - Docker Desktop (opcional)
+- [Ollama](https://ollama.com) para el asistente, con los modelos `ollama pull qwen3.5` y `ollama pull nomic-embed-text`
 
 ### 1. Configuración
 
@@ -145,6 +152,16 @@ npx ng serve --port 4300
 ```
 
 Abre `http://localhost:4300`.
+
+### 5. Asistente virtual
+
+Ollama corre en el equipo (fuera de Docker) para usar la GPU. Con Docker, `chroma` y `assistant-api` se levantan con el resto; en local, el asistente busca ChromaDB en `http://localhost:8000`.
+
+- Al arrancar, si la colección está vacía, indexa sola los documentos de `Assistant_BACK/Assistant_Api/BaseConocimiento/`.
+- Tras cambiar los documentos: `POST /api/asistente/documentos/reindexar` con un token de administrador.
+- El prompt, el modelo, los sinónimos y los límites están en `Assistant_BACK/Assistant_Api/asistente.json`.
+- Seguridad: el modelo se fija en el servidor, solo se aceptan mensajes `user`/`assistant` (un cliente no puede inyectar `system`), el historial se recorta, el gateway limita a 10 preguntas por minuto y como máximo 2 respuestas se generan a la vez (las demás esperan turno o reciben 503).
+- Los documentos marcados con `BORRADOR` (devoluciones, tiempos de entrega, contacto, medidas de tallas) deben revisarse con el negocio.
 
 ### Probar la API
 

@@ -1,0 +1,76 @@
+@if (visible) {
+  @if (abierto) {
+    <section class="panel" role="dialog" aria-labelledby="asistente-titulo">
+      <header class="cabecera">
+        <span class="avatar" aria-hidden="true"><i class="bi bi-stars"></i></span>
+        <div class="titulo">
+          <h2 id="asistente-titulo">Andi</h2>
+          <span>Asistente virtual de Tienda Andina</span>
+        </div>
+        <button type="button" class="accion" (click)="nuevaConversacion()" [disabled]="respondiendo || !mensajes.length"
+                title="Nueva conversación" aria-label="Nueva conversación">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+        <button type="button" class="accion" (click)="cerrar()" title="Cerrar" aria-label="Cerrar el asistente">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </header>
+
+      <div class="mensajes" #lista aria-live="polite">
+        <div class="burbuja asistente">
+          <p>¡Hola! Soy Andi. Puedo ayudarle con envíos, pagos, pedidos, cambios y devoluciones, tallas y su cuenta.</p>
+        </div>
+
+        @if (!mensajes.length) {
+          <div class="sugerencias">
+            @for (sugerencia of sugerencias; track sugerencia) {
+              <button type="button" (click)="enviar(sugerencia)">{{ sugerencia }}</button>
+            }
+          </div>
+        }
+
+        @for (mensaje of mensajes; track $index) {
+          @if (mensaje.role === 'user') {
+            <div class="burbuja usuario">{{ mensaje.content }}</div>
+          } @else {
+            <div class="burbuja asistente">
+              <div [innerHTML]="formatear(mensaje.content)"></div>
+              @if (mensaje.fuentes?.length) {
+                <small class="fuentes"><i class="bi bi-journal-text"></i> {{ mensaje.fuentes!.join(' · ') }}</small>
+              }
+            </div>
+          }
+        }
+
+        @if (respondiendo) {
+          <div class="burbuja asistente escribiendo" aria-label="Andi está escribiendo">
+            <span></span><span></span><span></span>
+          </div>
+        }
+
+        @if (error) {
+          <div class="error" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>{{ error }}</span>
+            <button type="button" (click)="reintentar()">Reintentar</button>
+          </div>
+        }
+      </div>
+
+      <form class="entrada" (submit)="$event.preventDefault(); enviar()">
+        <textarea #entrada rows="1" placeholder="Escriba su pregunta…" aria-label="Pregunta para el asistente"
+                  [maxLength]="maxCaracteres" [value]="texto" (input)="texto = $any($event.target).value"
+                  (keydown)="alEscribir($event)"></textarea>
+        <button type="submit" class="enviar" [disabled]="respondiendo || !texto.trim()" aria-label="Enviar">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </form>
+      <p class="aviso-ia">Respuestas generadas con IA: pueden contener errores. No comparta contraseñas ni datos de tarjetas.</p>
+    </section>
+  }
+
+  <button type="button" class="lanzador" [class.activo]="abierto" (click)="alternar()"
+          [attr.aria-expanded]="abierto" [attr.aria-label]="abierto ? 'Cerrar el asistente' : 'Abrir el asistente virtual'">
+    <i class="bi" [class.bi-chat-dots-fill]="!abierto" [class.bi-x-lg]="abierto"></i>
+  </button>
+}
