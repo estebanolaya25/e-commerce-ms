@@ -5,5 +5,6 @@ export const API = {
   inventario: '/api/inventario',
   carrito: '/api/carrito',
   pedidos: '/api/pedidos',
-  pagos: '/api/pagos'
+  pagos: '/api/pagos',
+  asistente: '/api/asistente'
 } as const;

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AsistenteChat } from './componentes/asistente-chat/asistente-chat';
 import { Avisos } from './componentes/avisos/avisos';
 import { BarraCarga } from './componentes/barra-carga/barra-carga';
 import { EstadoPagoInsignia } from './componentes/estado-pago/estado-pago';
@@ -16,7 +17,7 @@ import { CopPipe } from './pipes/cop.pipe';
 
 const COMPARTIDOS = [
   Navbar, PiePagina, NoEncontrada, TarjetaProducto, Paginador, Avisos, BarraCarga,
-  EstadoPedidoInsignia, EstadoPagoInsignia, LineaTiempoPedido, ProductoSku, CopPipe
+  EstadoPedidoInsignia, EstadoPagoInsignia, LineaTiempoPedido, ProductoSku, CopPipe, AsistenteChat
 ];
 
 // Componentes, pipes y directivas que usan varios módulos. Se importa en cada módulo de funcionalidad.

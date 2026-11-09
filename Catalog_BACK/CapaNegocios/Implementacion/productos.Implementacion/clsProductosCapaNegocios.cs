@@ -26,6 +26,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
         private readonly IAlmacenamientoImagenes _almacenamientoImagenes;
         private readonly ICacheCatalogo _cache;
         private readonly IPublicadorEventos _publicadorEventos;
+        private readonly clsNotificadorCatalogo _notificador;
         private readonly IConfiguration _configuration;
 
         public clsProductosCapaNegocios(
@@ -35,6 +36,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
             IAlmacenamientoImagenes almacenamientoImagenes,
             ICacheCatalogo cache,
             IPublicadorEventos publicadorEventos,
+            clsNotificadorCatalogo notificador,
             IConfiguration configuration)
         {
             _productosCapaDatos = productosCapaDatos;
@@ -43,6 +45,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
             _almacenamientoImagenes = almacenamientoImagenes;
             _cache = cache;
             _publicadorEventos = publicadorEventos;
+            _notificador = notificador;
             _configuration = configuration;
         }
 
@@ -114,6 +117,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
                 ProductoDetalleDto creado = (await ObtenerPorId(productoId))!;
                 foreach (VarianteDto variante in creado.Variantes)
                     await PublicarVarianteCreada(variante);
+                await _notificador.ProductoModificado(productoId);
 
                 return ResultadoCatalogo<ProductoDetalleDto>.Ok(creado);
             }
@@ -148,6 +152,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
             {
                 await _productosCapaDatos.ActualizarProducto(productoId, request, slug, usuarioId);
                 await _cache.Invalidar();
+                await _notificador.ProductoModificado(productoId);
                 return ResultadoCatalogo<ProductoDetalleDto>.Ok((await ObtenerPorId(productoId))!);
             }
             catch (ConflictoDatosException ex)
@@ -162,6 +167,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
                 return ResultadoCatalogo<bool>.Error(EstadoResultado.NoEncontrado, MensajeProductoNoEncontrado);
 
             await _cache.Invalidar();
+            await _notificador.ProductoModificado(productoId);
             return ResultadoCatalogo<bool>.Ok(true);
         }
 
@@ -204,6 +210,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
 
                 VarianteDto creada = (await _productosCapaDatos.ObtenerVariante(varianteId))!;
                 await PublicarVarianteCreada(creada);
+                await _notificador.ProductoModificado(productoId);
                 return ResultadoCatalogo<VarianteDto>.Ok(creada);
             }
             catch (ConflictoDatosException ex)
@@ -231,6 +238,7 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
             {
                 await _productosCapaDatos.ActualizarVariante(varianteId, request);
                 await _cache.Invalidar();
+                await _notificador.ProductoModificado(variante.ProductoId);
                 return ResultadoCatalogo<VarianteDto>.Ok((await _productosCapaDatos.ObtenerVariante(varianteId))!);
             }
             catch (ConflictoDatosException ex)
@@ -245,6 +253,9 @@ namespace CapaNegocios.Implementacion.productos.Implementacion
                 return ResultadoCatalogo<bool>.Error(EstadoResultado.NoEncontrado, MensajeVarianteNoEncontrada);
 
             await _cache.Invalidar();
+            VarianteDto? variante = await _productosCapaDatos.ObtenerVariante(varianteId);
+            if (variante != null)
+                await _notificador.ProductoModificado(variante.ProductoId);
             return ResultadoCatalogo<bool>.Ok(true);
         }
 

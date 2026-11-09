@@ -1,0 +1,34 @@
+{
+  "ReverseProxy": {
+    "Clusters": {
+      "auth": {
+        "HealthCheck": { "Active": { "Enabled": false } },
+        "HttpRequest": { "ActivityTimeout": "00:10:00" }
+      },
+      "catalogo": {
+        "HealthCheck": { "Active": { "Enabled": false } },
+        "HttpRequest": { "ActivityTimeout": "00:10:00" }
+      },
+      "inventario": {
+        "HealthCheck": { "Active": { "Enabled": false } },
+        "HttpRequest": { "ActivityTimeout": "00:10:00" }
+      },
+      "carrito": {
+        "HealthCheck": { "Active": { "Enabled": false } },
+        "HttpRequest": { "ActivityTimeout": "00:10:00" }
+      },
+      "pedidos": {
+        "HealthCheck": { "Active": { "Enabled": false } },
+        "HttpRequest": { "ActivityTimeout": "00:10:00" }
+      },
+      "pagos": {
+        "HealthCheck": { "Active": { "Enabled": false } },
+        "HttpRequest": { "ActivityTimeout": "00:10:00" }
+      },
+      "asistente": {
+        "HealthCheck": { "Active": { "Enabled": false } },
+        "HttpRequest": { "ActivityTimeout": "00:10:00" }
+      }
+    }
+  }
+}

@@ -15,12 +15,14 @@ namespace CapaNegocios.Implementacion.categorias.Implementacion
 
         private readonly ICategoriasCapaDatos _categoriasCapaDatos;
         private readonly ICacheCatalogo _cache;
+        private readonly clsNotificadorCatalogo _notificador;
         private readonly IConfiguration _configuration;
 
-        public clsCategoriasCapaNegocios(ICategoriasCapaDatos categoriasCapaDatos, ICacheCatalogo cache, IConfiguration configuration)
+        public clsCategoriasCapaNegocios(ICategoriasCapaDatos categoriasCapaDatos, ICacheCatalogo cache, clsNotificadorCatalogo notificador, IConfiguration configuration)
         {
             _categoriasCapaDatos = categoriasCapaDatos;
             _cache = cache;
+            _notificador = notificador;
             _configuration = configuration;
         }
 
@@ -87,6 +89,7 @@ namespace CapaNegocios.Implementacion.categorias.Implementacion
             {
                 await _categoriasCapaDatos.ActualizarCategoria(categoriaId, request, slug);
                 await _cache.Invalidar();
+                await _notificador.CatalogoModificado("Categoría actualizada");
                 return ResultadoCatalogo<CategoriaDto>.Ok((await _categoriasCapaDatos.ObtenerCategoriaPorId(categoriaId))!);
             }
             catch (ConflictoDatosException ex)
@@ -101,6 +104,7 @@ namespace CapaNegocios.Implementacion.categorias.Implementacion
                 return ResultadoCatalogo<bool>.Error(EstadoResultado.NoEncontrado, MensajeNoEncontrada);
 
             await _cache.Invalidar();
+            await _notificador.CatalogoModificado("Categoría activada o desactivada");
             return ResultadoCatalogo<bool>.Ok(true);
         }
 

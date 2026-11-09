@@ -1,0 +1,150 @@
+@if (abierto) {
+  <section class="panel" role="dialog" aria-labelledby="asistente-titulo">
+    <header class="cabecera">
+      <span class="avatar" aria-hidden="true"><i class="bi bi-stars"></i></span>
+      <div class="titulo">
+        <h2 id="asistente-titulo">{{ titulo }}</h2>
+        <span>{{ subtitulo }}</span>
+      </div>
+      <button type="button" class="accion" (click)="nuevaConversacion()" [disabled]="respondiendo || !mensajes.length"
+              title="Nueva conversación" aria-label="Nueva conversación">
+        <i class="bi bi-arrow-counterclockwise"></i>
+      </button>
+      <button type="button" class="accion" (click)="cerrar()" title="Cerrar" aria-label="Cerrar el asistente">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <div class="mensajes" #lista aria-live="polite" [attr.aria-busy]="respondiendo">
+      <div class="burbuja asistente">
+        <p>{{ saludo }}</p>
+      </div>
+
+      @if (!mensajes.length) {
+        <div class="sugerencias">
+          @for (sugerencia of sugerencias; track sugerencia) {
+            <button type="button" (click)="enviar(sugerencia)">{{ sugerencia }}</button>
+          }
+        </div>
+      }
+
+      @for (mensaje of mensajes; track $index) {
+        @if (mensaje.role === 'user') {
+          <div class="burbuja usuario">{{ mensaje.content }}</div>
+        } @else if (mensaje.enCurso && !mensaje.content) {
+          <!-- Aún no llega texto: puntos animados y, si está usando herramientas, qué consulta. -->
+          <div class="burbuja asistente escribiendo" role="status" aria-label="Andi está escribiendo">
+            <span class="puntos"><span></span><span></span><span></span></span>
+            @if (mensaje.progreso) {
+              <span class="progreso">{{ mensaje.progreso }}</span>
+            }
+          </div>
+        } @else {
+          <div class="burbuja asistente" [class.en-curso]="mensaje.enCurso">
+            <div [innerHTML]="formatear(mensaje.content)"></div>
+            @if (mensaje.productos?.length) {
+              <ul class="productos">
+                @for (producto of mensaje.productos; track producto.slug) {
+                  <li>
+                    <a [routerLink]="['/producto', producto.slug]" (click)="alAbrirProducto()">
+                      @if (producto.imagenUrl) {
+                        <img [src]="producto.imagenUrl" [alt]="producto.nombre" loading="lazy">
+                      } @else {
+                        <span class="sin-imagen" aria-hidden="true"><i class="bi bi-image"></i></span>
+                      }
+                      <span class="datos">
+                        <span class="nombre">{{ producto.nombre }}</span>
+                        @if (producto.marca) {
+                          <span class="marca">{{ producto.marca }}</span>
+                        }
+                        <span class="precio">
+                          {{ producto.precio | cop }}
+                          @if (producto.precioAntes) {
+                            <s>{{ producto.precioAntes | cop }}</s>
+                          }
+                        </span>
+                        @if (producto.disponible === false) {
+                          <span class="agotado">Agotado</span>
+                        }
+                      </span>
+                      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                    </a>
+                  </li>
+                }
+              </ul>
+            }
+            @if (mensaje.acciones?.length) {
+              <ul class="acciones">
+                @for (accion of mensaje.acciones; track $index) {
+                  <li [class]="accion.estado">
+                    <span class="descripcion">
+                      <i class="bi" [class.bi-cart-plus]="accion.tipo === 'agregar_carrito'"
+                         [class.bi-x-octagon]="accion.tipo === 'cancelar_pedido'"
+                         [class.bi-truck]="accion.tipo === 'avanzar_pedido'" aria-hidden="true"></i>
+                      {{ accion.descripcion }}
+                    </span>
+                    @switch (accion.estado) {
+                      @case ('pendiente') {
+                        <span class="botones">
+                          <button type="button" class="confirmar" (click)="confirmar(accion)">Confirmar</button>
+                          <button type="button" class="descartar" (click)="descartar(accion)">Descartar</button>
+                        </span>
+                      }
+                      @case ('ejecutando') {
+                        <span class="resultado"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Procesando…</span>
+                      }
+                      @case ('hecha') {
+                        <span class="resultado" role="status">
+                          <i class="bi bi-check-circle-fill"></i> {{ accion.mensaje }}
+                          @if (accion.tipo === 'agregar_carrito') {
+                            <a routerLink="/carrito" (click)="alAbrirProducto()">Ver carrito</a>
+                          } @else if (accion.tipo === 'avanzar_pedido') {
+                            <a [routerLink]="['/admin/pedidos', accion.pedidoId]" (click)="alAbrirProducto()">Ver pedido</a>
+                          } @else {
+                            <a routerLink="/pedidos" (click)="alAbrirProducto()">Mis pedidos</a>
+                          }
+                        </span>
+                      }
+                      @case ('descartada') {
+                        <span class="resultado">Descartada</span>
+                      }
+                      @case ('error') {
+                        <span class="resultado" role="alert"><i class="bi bi-exclamation-triangle"></i> {{ accion.mensaje }}</span>
+                      }
+                    }
+                  </li>
+                }
+              </ul>
+            }
+            @if (mensaje.fuentes?.length) {
+              <small class="fuentes"><i class="bi bi-journal-text"></i> {{ mensaje.fuentes!.join(' · ') }}</small>
+            }
+          </div>
+        }
+      }
+
+      @if (error) {
+        <div class="error" role="alert">
+          <i class="bi bi-exclamation-triangle"></i>
+          <span>{{ error }}</span>
+          <button type="button" (click)="reintentar()">Reintentar</button>
+        </div>
+      }
+    </div>
+
+    <form class="entrada" (submit)="$event.preventDefault(); enviar()">
+      <textarea #entrada rows="1" placeholder="Escriba su pregunta…" aria-label="Pregunta para el asistente"
+                [maxLength]="maxCaracteres" [value]="texto" (input)="texto = $any($event.target).value"
+                (keydown)="alEscribir($event)"></textarea>
+      <button type="submit" class="enviar" [disabled]="respondiendo || !texto.trim()" aria-label="Enviar">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </form>
+    <p class="aviso-ia">Respuestas generadas con IA: pueden contener errores. No comparta contraseñas ni datos de tarjetas.</p>
+  </section>
+}
+
+<button type="button" class="lanzador" [class.activo]="abierto" (click)="alternar()"
+        [attr.aria-expanded]="abierto" [attr.aria-label]="abierto ? 'Cerrar el asistente' : 'Abrir el asistente virtual'">
+  <i class="bi" [class.bi-chat-dots-fill]="!abierto" [class.bi-x-lg]="abierto"></i>
+</button>

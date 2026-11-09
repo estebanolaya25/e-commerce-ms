@@ -12,6 +12,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 - Registro, inicio de sesión y renovación automática de la sesión.
 - Carrito, checkout con **reserva de stock por 15 minutos** y pago con tarjeta (pasarela simulada).
 - Historial de pedidos con línea de tiempo de estados y cancelación mientras no estén pagados.
+- Asistente virtual (Andi) en un chat flotante: busca productos en lenguaje natural ("tenis para correr de menos de 200 mil") y los muestra como tarjetas con precio y disponibilidad, y responde preguntas de envíos, pagos, pedidos, devoluciones, tallas y cuenta con RAG sobre una base de conocimiento propia. Con sesión iniciada consulta los pedidos y el carrito del cliente y propone acciones (agregar al carrito, cancelar un pedido) que el cliente confirma con un botón.
 
 **Panel interno (`/admin`) por roles**
 
@@ -21,6 +22,8 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 | Soporte | Consultar pedidos y pagos (solo lectura) |
 | Bodega | Despachar pedidos pagados y gestionar el inventario |
 | Gestor de catálogo | Productos, variantes, imágenes, categorías y marcas |
+
+En el panel, el asistente (Andi interno) responde según el rol: Soporte consulta pedidos y pagos ("¿por qué se rechazó el pago del pedido X?"), Bodega consulta los pedidos por despachar y el stock bajo mínimo, y prepara el avance de un despacho para confirmar con un botón, y Catálogo busca productos y genera descripciones de producto con IA desde el formulario (vista previa, se aplican solo si se aceptan).
 
 ## Arquitectura
 
@@ -34,10 +37,13 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
      │       │    │       │          │          │          │
   SQL Server Postgres Redis SQL Server Redis  SQL Server  SQL Server
 
+   ASISTENTE :5107 ──► Ollama (host, :11434)  +  ChromaDB (:8000)
+
    ══════════════════════ RabbitMQ (eventos) ══════════════════════
    Catálogo ──VarianteCreada──────────────────────────► Inventario
    Pedidos  ──PedidoCreado────────────────────────────► Carrito
    Pagos    ──PagoAprobado / PagoRechazado / Reembolsado► Pedidos
+   Catálogo ──ProductoModificado / CatalogoModificado─────► Asistente
 ```
 
 | Servicio | Responsabilidad | Almacenamiento |
@@ -49,6 +55,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 | **Carrito** | Carrito por usuario con precios y disponibilidad | Redis |
 | **Pedidos** | Checkout y orquestación de la saga del pedido | SQL Server |
 | **Pagos** | Pasarela de pagos simulada | SQL Server |
+| **Asistente** | Chat con RAG y búsqueda semántica de productos; responde con un modelo local | ChromaDB (vectores) |
 
 ### Decisiones de diseño
 
@@ -72,6 +79,7 @@ Tienda en línea de ropa, calzado y accesorios construida con **arquitectura de 
 | Caché | Redis |
 | Seguridad | JWT, refresh tokens con rotación, PBKDF2 para contraseñas |
 | Frontend | Angular 21 (NgModules), RxJS, Bootstrap 5, SCSS |
+| IA | Ollama (`qwen3.5`, `nomic-embed-text`), ChromaDB |
 | Contenedores | Docker Compose |
 
 ## Estructura del repositorio
@@ -83,13 +91,14 @@ Inventory_BACK/    Inventario y reservas
 Cart_BACK/         Carrito
 Orders_BACK/       Pedidos (orquestador)
 Payments_BACK/     Pagos simulados
+Assistant_BACK/    Asistente virtual (RAG con Ollama y ChromaDB)
 Gateway_BACK/      API Gateway (YARP)
 Ecommerce_FRONT/   Frontend Angular
 Postman/           Colección de pruebas de la API
 Semillas/          Generadores de datos de ejemplo
 ```
 
-Cada servicio sigue la misma estructura de capas: `*_Api`, `CapaNegocios`, `CapaDatos`, `CapaDTO` y, cuando aplica, `BaseDatos/` con los scripts SQL.
+Cada servicio sigue la misma estructura de capas: `*_Api`, `CapaNegocios`, `CapaDatos`, `CapaDTO` y, cuando aplica, `BaseDatos/` con los scripts SQL. El asistente es la excepción: no tiene base de datos relacional y es un solo proyecto (`Assistant_Api`).
 
 ## Cómo ejecutarlo
 
@@ -99,6 +108,7 @@ Cada servicio sigue la misma estructura de capas: `*_Api`, `CapaNegocios`, `Capa
 - SQL Server, PostgreSQL, Redis y RabbitMQ
 - Python 3 (para generar los datos de ejemplo)
 - Docker Desktop (opcional)
+- [Ollama](https://ollama.com) para el asistente, con los modelos `ollama pull qwen3.5` y `ollama pull nomic-embed-text`
 
 ### 1. Configuración
 
@@ -136,6 +146,17 @@ docker compose up -d --build
 powershell -ExecutionPolicy Bypass -File .\iniciar-local.ps1
 ```
 
+**Depurar desde Visual Studio:** abre `E-Commerce-ms.sln` y elige el perfil de inicio **"Todos los microservicios"** (definido en `E-Commerce-ms.slnLaunch`; arranca los 8 proyectos, asistente incluido, con el depurador). Antes:
+
+```powershell
+docker compose stop gateway auth-api catalog-api inventory-api cart-api orders-api payments-api assistant-api
+docker compose up -d chroma   # ChromaDB queda en http://localhost:8000
+```
+
+Si las APIs siguen en Docker, el Gateway local no puede tomar el puerto 5100. Los `appsettings.json` locales apuntan a `localhost`, igual que `iniciar-local.ps1`.
+
+Los perfiles de `launchSettings.json` definen `Depuracion=true` para que un servicio detenido en un punto de interrupción no se dé por caído: el Gateway carga `yarp.Depuracion.json` (sin health checks y con 10 min de espera por petición) y Asistente, Carrito y Pedidos alargan los timeouts de sus llamadas entre servicios (5 min por intento). Docker no usa esos perfiles, así que conserva los tiempos normales. Si se detiene mucho rato, el token de acceso (15 min) puede vencer.
+
 ### 4. Frontend
 
 ```bash
@@ -145,6 +166,34 @@ npx ng serve --port 4300
 ```
 
 Abre `http://localhost:4300`.
+
+### 5. Asistente virtual
+
+Ollama corre en el equipo (fuera de Docker) para usar la GPU. Con Docker, `chroma` y `assistant-api` se levantan con el resto; en local, el asistente busca ChromaDB en `http://localhost:8000`.
+
+- Al arrancar, si la colección está vacía, indexa sola los documentos de `Assistant_BACK/Assistant_Api/BaseConocimiento/`.
+- Tras cambiar los documentos: `POST /api/asistente/documentos/reindexar` con un token de administrador.
+- **Productos:** al arrancar, si su colección está vacía, lee todo el catálogo activo e indexa un documento por producto (nombre, categoría, marca, colores, tallas y descripción). Después se mantiene al día solo: Catálogo publica `ProductoModificado` al crear o editar un producto, sus variantes o imágenes, o al cambiar su estado, y `CatalogoModificado` al cambiar una categoría o marca (el asistente resincroniza todo). Resincronización manual: `POST /api/asistente/productos/sincronizar` (administrador).
+- En cada pregunta busca los productos más parecidos (distancia coseno ≤ `Productos:DistanciaMaxima`), aplica el rango de precio que pida el cliente ("menos de 200 mil", "entre 100 y 150 lucas") y consulta la disponibilidad real en Inventario. El modelo responde en JSON estructurado con el texto y los slugs que recomienda, y solo esos se muestran como tarjetas.
+- `GET /api/asistente/productos/buscar?q=...` hace la búsqueda semántica sin pasar por el modelo de chat (rápida, incluye la distancia de cada resultado; útil para calibrar el umbral).
+- **Herramientas (con sesión):** si la petición trae un JWT válido, el modelo puede usar `consultar_mis_pedidos`, `consultar_pedido`, `consultar_carrito`, `proponer_agregar_al_carrito` y `proponer_cancelar_pedido`. El asistente llama a Pedidos y Carrito **con el token del propio cliente** (nunca con credenciales propias), así que cada servicio aplica sus reglas: un cliente no puede ver pedidos ajenos aunque el modelo lo intente.
+- **Las acciones no las ejecuta el modelo.** Las herramientas `proponer_…` validan (variante, existencias, estado del pedido) y devuelven una propuesta; el chat muestra «Confirmar» / «Descartar» y, al confirmar, el frontend llama a la API de siempre (`POST /api/carrito/items`, `POST /api/pedidos/{id}/cancelar`). Además el servidor rechaza una propuesta si el cliente no pidió esa acción en sus últimos mensajes o si no eligió una opción con varias alternativas (talla, color…): el modelo no decide por el cliente.
+- Ollama no emite llamadas a herramientas cuando se le exige un formato JSON, así que con sesión hay hasta 3 rondas de herramientas sin formato y luego una respuesta final con formato. Sin sesión es una sola llamada.
+- La conversación del chat se guarda en `sessionStorage` por usuario y se borra al cerrar sesión.
+- **Panel interno (`/admin`):** el mismo chat cambia a `POST /api/asistente/panel/chat` (solo roles del panel). Las herramientas se ofrecen según el rol y se vuelven a comprobar al ejecutarlas; todas llaman con el token del empleado, así que Pedidos, Pagos e Inventario aplican sus permisos (Bodega solo ve pedidos pagados y sin correo del cliente). El prompt lista lo que el rol puede y **no** puede hacer: sin eso, el modelo llegaba a afirmar que había creado propuestas que su rol no permite.
+
+  | Rol | Herramientas |
+  |---|---|
+  | Soporte | `buscar_pedidos`, `consultar_pedido`, `consultar_pagos_pedido` |
+  | Bodega | `buscar_pedidos`, `consultar_pedido`, `consultar_stock_bajo`, `consultar_stock`, `proponer_avanzar_pedido` |
+  | Gestor de catálogo | `buscar_productos` |
+  | Administrador | Todas |
+
+- **Streaming:** el chat usa `POST /api/asistente/chat/stream` y `POST /api/asistente/panel/chat/stream`, que responden con Server-Sent Events: `estado` (qué herramienta está consultando), `texto` (fragmentos de la respuesta mientras el modelo la genera) y `fin` (la respuesta completa con productos y acciones), o `error`. La respuesta final del modelo es un JSON y un extractor incremental (`ExtractorRespuesta`) saca el campo `respuesta` a medida que llega. Las rondas de herramientas no se transmiten, solo avisan su estado. Los endpoints sin streaming (`/chat`, `/panel/chat`) siguen disponibles para otros clientes. `Ollama:KeepAlive` (30 min) mantiene el modelo cargado: sin eso, Ollama lo descarga a los 5 minutos y la primera pregunta tarda varios segundos más.
+- `POST /api/asistente/panel/descripcion` (Administrador y Gestor de catálogo) redacta descripción corta y larga a partir del formulario (nombre, categoría, marca, atributos, opciones de variantes), sin inventar materiales, medidas, precios ni existencias.
+- El prompt, el modelo, los sinónimos y los límites están en `Assistant_BACK/Assistant_Api/asistente.json`.
+- Seguridad: el modelo se fija en el servidor, solo se aceptan mensajes `user`/`assistant` (un cliente no puede inyectar `system`), el historial se recorta, el gateway limita a 10 preguntas por minuto y como máximo 2 respuestas se generan a la vez (las demás esperan turno o reciben 503).
+- Los documentos marcados con `BORRADOR` (devoluciones, tiempos de entrega, contacto, medidas de tallas) deben revisarse con el negocio.
 
 ### Probar la API
 

@@ -4,6 +4,7 @@ using CapaDto.Peticiones;
 using CapaDto.Respuestas;
 using CapaNegocios.Interfaz.cache.interfaz;
 using CapaNegocios.Interfaz.imagenes.interfaz;
+using CapaNegocios.util;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -17,6 +18,7 @@ namespace CapaNegocios.Implementacion.imagenes.Implementacion
         private readonly IProductosCapaDatos _productosCapaDatos;
         private readonly IAlmacenamientoImagenes _almacenamientoImagenes;
         private readonly ICacheCatalogo _cache;
+        private readonly clsNotificadorCatalogo _notificador;
         private readonly IConfiguration _configuration;
         private readonly ILogger<clsImagenesCapaNegocios> _logger;
 
@@ -25,6 +27,7 @@ namespace CapaNegocios.Implementacion.imagenes.Implementacion
             IProductosCapaDatos productosCapaDatos,
             IAlmacenamientoImagenes almacenamientoImagenes,
             ICacheCatalogo cache,
+            clsNotificadorCatalogo notificador,
             IConfiguration configuration,
             ILogger<clsImagenesCapaNegocios> logger)
         {
@@ -32,6 +35,7 @@ namespace CapaNegocios.Implementacion.imagenes.Implementacion
             _productosCapaDatos = productosCapaDatos;
             _almacenamientoImagenes = almacenamientoImagenes;
             _cache = cache;
+            _notificador = notificador;
             _configuration = configuration;
             _logger = logger;
         }
@@ -73,6 +77,7 @@ namespace CapaNegocios.Implementacion.imagenes.Implementacion
                 ImagenDto imagen = await _imagenesCapaDatos.CrearImagen(productoId, request.VarianteId, rutaArchivo, texto, request.EsPrincipal);
                 imagen.Url = _almacenamientoImagenes.ObtenerUrl(imagen.RutaArchivo);
                 await _cache.Invalidar();
+                await _notificador.ProductoModificado(productoId);
                 return ResultadoCatalogo<ImagenDto>.Ok(imagen);
             }
             catch
@@ -84,11 +89,15 @@ namespace CapaNegocios.Implementacion.imagenes.Implementacion
 
         public async Task<ResultadoCatalogo<bool>> Eliminar(Guid imagenId)
         {
+            // Se lee antes de borrarla para saber de qué producto era.
+            ImagenDto? imagen = await _imagenesCapaDatos.ObtenerImagen(imagenId);
             string? rutaArchivo = await _imagenesCapaDatos.EliminarImagen(imagenId);
             if (rutaArchivo == null)
                 return ResultadoCatalogo<bool>.Error(EstadoResultado.NoEncontrado, MensajeImagenNoEncontrada);
 
             await _cache.Invalidar();
+            if (imagen != null)
+                await _notificador.ProductoModificado(imagen.ProductoId);
 
             try
             {
@@ -108,6 +117,9 @@ namespace CapaNegocios.Implementacion.imagenes.Implementacion
                 return ResultadoCatalogo<bool>.Error(EstadoResultado.NoEncontrado, MensajeImagenNoEncontrada);
 
             await _cache.Invalidar();
+            ImagenDto? principal = await _imagenesCapaDatos.ObtenerImagen(imagenId);
+            if (principal != null)
+                await _notificador.ProductoModificado(principal.ProductoId);
             return ResultadoCatalogo<bool>.Ok(true);
         }
 

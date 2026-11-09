@@ -8,7 +8,8 @@
       "launchUrl": "api/carrito/swagger",
       "applicationUrl": "http://localhost:5104",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Depuracion": "true"
       }
     },
     "https": {
@@ -18,7 +19,8 @@
       "launchUrl": "api/carrito/swagger",
       "applicationUrl": "https://localhost:7104;http://localhost:5104",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Depuracion": "true"
       }
     }
   }

@@ -19,6 +19,7 @@ using CapaNegocios.Interfaz.productos.interfaz;
 using Catalog_Api.almacenamiento;
 using Catalog_Api.mensajeria;
 using CapaNegocios.Interfaz.eventos.interfaz;
+using CapaNegocios.util;
 using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -119,6 +120,7 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddSingleton<IAlmacenamientoImagenes, AlmacenamientoImagenesLocal>();
 builder.Services.AddSingleton<ICacheCatalogo, clsCacheCatalogoRedis>();
 builder.Services.AddScoped<IPublicadorEventos, PublicadorEventosMassTransit>();
+builder.Services.AddScoped<clsNotificadorCatalogo>();
 builder.Services.AddScoped<ICategoriasCapaDatos, clsCategoriasCapaDatos>();
 builder.Services.AddScoped<IMarcasCapaDatos, clsMarcasCapaDatos>();
 builder.Services.AddScoped<IProductosCapaDatos, clsProductosCapaDatos>();

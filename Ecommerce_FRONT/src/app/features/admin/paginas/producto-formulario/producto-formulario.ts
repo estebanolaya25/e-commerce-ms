@@ -5,7 +5,9 @@ import { forkJoin, of } from 'rxjs';
 import {
   ImagenProducto, Marca, ProductoDetalle, ProductoPeticion, Variante, VariantePeticion
 } from '../../../../core/modelos/catalogo.model';
+import { DescripcionSugerida } from '../../../../core/modelos/asistente.model';
 import { AdminCatalogoService } from '../../../../core/servicios/admin-catalogo.service';
+import { AsistenteService } from '../../../../core/servicios/asistente.service';
 import { AvisosService } from '../../../../core/servicios/avisos.service';
 import { CategoriaPlana, aplanarCategorias } from '../../../../core/utilidades/categorias';
 import { mensajeDeError } from '../../../../core/utilidades/errores-http';
@@ -64,11 +66,17 @@ export class ProductoFormulario implements OnInit {
   subiendo = false;
   readonly ocupadas = new Set<string>();
 
+  // Descripción sugerida por el asistente: se muestra como vista previa y solo se copia al formulario si se acepta.
+  generandoDescripcion = false;
+  sugerencia: DescripcionSugerida | null = null;
+  errorSugerencia: string | null = null;
+
   readonly formulario;
 
   constructor(
     fb: FormBuilder,
     private adminCatalogo: AdminCatalogoService,
+    private asistente: AsistenteService,
     private avisos: AvisosService,
     private ruta: ActivatedRoute,
     private router: Router
@@ -87,6 +95,65 @@ export class ProductoFormulario implements OnInit {
 
   get esNuevo(): boolean {
     return this.productoId === null;
+  }
+
+  // ---------- Descripción con el asistente ----------
+
+  // Usa lo que hay en el formulario (aunque no esté guardado): nombre, categoría, marca, atributos y opciones de variantes.
+  generarDescripcion(): void {
+    const valor = this.formulario.getRawValue();
+    const categoria = this.categorias.find(c => c.categoria.id === valor.categoriaId)?.categoria.nombre;
+    if (!valor.nombre.trim() || !categoria) {
+      this.errorSugerencia = 'Escriba el nombre y elija la categoría antes de generar la descripción.';
+      return;
+    }
+
+    const opciones: Record<string, string[]> = {};
+    for (const fila of this.filas) {
+      for (const [nombre, valorOpcion] of Object.entries(fila.opciones)) {
+        const limpio = valorOpcion.trim();
+        const valores = (opciones[nombre] ??= []);
+        if (limpio && !valores.includes(limpio)) {
+          valores.push(limpio);
+        }
+      }
+    }
+
+    this.generandoDescripcion = true;
+    this.errorSugerencia = null;
+    this.sugerencia = null;
+    this.asistente.generarDescripcion({
+      nombre: valor.nombre.trim(),
+      categoria,
+      marca: this.marcas.find(m => m.id === valor.marcaId)?.nombre ?? null,
+      atributos: Object.fromEntries(this.atributos.filter(a => a.clave.trim() && a.valor.trim()).map(a => [a.clave.trim(), a.valor.trim()])),
+      opciones,
+      descripcionActual: valor.descripcion.trim() || null
+    }).subscribe({
+      next: sugerencia => {
+        this.sugerencia = sugerencia;
+        this.generandoDescripcion = false;
+      },
+      error: error => {
+        this.errorSugerencia = mensajeDeError(error, 'No se pudo generar la descripción. Intente de nuevo.');
+        this.generandoDescripcion = false;
+      }
+    });
+  }
+
+  usarSugerencia(): void {
+    if (!this.sugerencia) return;
+    this.formulario.patchValue({
+      descripcionCorta: this.sugerencia.descripcionCorta,
+      descripcion: this.sugerencia.descripcion
+    });
+    this.formulario.markAsDirty();
+    this.sugerencia = null;
+    this.avisos.info('Descripción aplicada', 'Revísela y guarde el producto para publicarla.');
+  }
+
+  descartarSugerencia(): void {
+    this.sugerencia = null;
   }
 
   ngOnInit(): void {

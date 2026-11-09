@@ -89,6 +89,15 @@ void ConfigurarResiliencia(HttpStandardResilienceOptions opciones)
     opciones.CircuitBreaker.MinimumThroughput = 5;
     opciones.CircuitBreaker.FailureRatio = 0.5;
     opciones.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
+    // Depuración local (Depuracion=true en launchSettings.json): el servicio llamado puede estar detenido en un
+    // punto de interrupción. Con los tiempos normales se daría por caído a los pocos segundos.
+    if (builder.Configuration.GetValue<bool>("Depuracion"))
+    {
+        opciones.AttemptTimeout.Timeout = TimeSpan.FromMinutes(5);
+        opciones.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(10);
+        // El circuit breaker exige una ventana de al menos el doble del tiempo por intento.
+        opciones.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(10);
+    }
 }
 
 builder.Services

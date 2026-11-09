@@ -25,12 +25,15 @@ services:
       RateLimit__Pagos__VentanaSegundos: "60"
       RateLimit__Administracion__PermitLimit: "120"
       RateLimit__Administracion__VentanaSegundos: "60"
+      RateLimit__Asistente__PermitLimit: "10"
+      RateLimit__Asistente__VentanaSegundos: "60"
       ReverseProxy__Clusters__auth__Destinations__auth1__Address: "http://auth-api:8080/"
       ReverseProxy__Clusters__catalogo__Destinations__catalogo1__Address: "http://catalog-api:8080/"
       ReverseProxy__Clusters__inventario__Destinations__inventario1__Address: "http://inventory-api:8080/"
       ReverseProxy__Clusters__carrito__Destinations__carrito1__Address: "http://cart-api:8080/"
       ReverseProxy__Clusters__pedidos__Destinations__pedidos1__Address: "http://orders-api:8080/"
       ReverseProxy__Clusters__pagos__Destinations__pagos1__Address: "http://payments-api:8080/"
+      ReverseProxy__Clusters__asistente__Destinations__asistente1__Address: "http://assistant-api:8080/"
     ports:
       - "5100:8080"
     depends_on:
@@ -40,6 +43,7 @@ services:
       - cart-api
       - orders-api
       - payments-api
+      - assistant-api
     restart: unless-stopped
 
   auth-api:
@@ -176,5 +180,50 @@ services:
       Simulador__SegundosMaximos: "8"
     restart: unless-stopped
 
+  # Asistente virtual (RAG). Ollama corre en el equipo anfitrión, fuera de Docker, para usar la GPU directamente.
+  assistant-api:
+    build:
+      context: ./Assistant_BACK
+      dockerfile: Dockerfile
+    container_name: assistant-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Issuer: ecommerce-auth
+      Jwt__Audience: ecommerce-api
+      Jwt__Key: ${JWT_KEY}
+      Ollama__BaseUrl: "http://host.docker.internal:11434"
+      Ollama__Model: "qwen3.5:latest"
+      Ollama__MaxConcurrencia: "2"
+      Rag__ChromaUrl: "http://chroma:8000"
+      Servicios__CatalogoUrl: "http://catalog-api:8080/"
+      Servicios__InventarioUrl: "http://inventory-api:8080/"
+      Servicios__CarritoUrl: "http://cart-api:8080/"
+      Servicios__PedidosUrl: "http://orders-api:8080/"
+      Servicios__PagosUrl: "http://payments-api:8080/"
+      RabbitMQ__Host: host.docker.internal
+      RabbitMQ__Usuario: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+    depends_on:
+      - chroma
+      - catalog-api
+      - inventory-api
+      - cart-api
+      - orders-api
+      - payments-api
+    restart: unless-stopped
+
+  chroma:
+    image: chromadb/chroma:1.5.9
+    container_name: chroma
+    # Publicado en el equipo para depurar el asistente desde Visual Studio (iniciar-local.ps1 o E-Commerce-ms.slnLaunch).
+    ports:
+      - "8000:8000"
+    environment:
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - chroma-datos:/data
+    restart: unless-stopped
+
 volumes:
   catalog-imagenes:
+  chroma-datos:
