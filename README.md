@@ -146,6 +146,17 @@ docker compose up -d --build
 powershell -ExecutionPolicy Bypass -File .\iniciar-local.ps1
 ```
 
+**Depurar desde Visual Studio:** abre `E-Commerce-ms.sln` y elige el perfil de inicio **"Todos los microservicios"** (definido en `E-Commerce-ms.slnLaunch`; arranca los 8 proyectos, asistente incluido, con el depurador). Antes:
+
+```powershell
+docker compose stop gateway auth-api catalog-api inventory-api cart-api orders-api payments-api assistant-api
+docker compose up -d chroma   # ChromaDB queda en http://localhost:8000
+```
+
+Si las APIs siguen en Docker, el Gateway local no puede tomar el puerto 5100. Los `appsettings.json` locales apuntan a `localhost`, igual que `iniciar-local.ps1`.
+
+Los perfiles de `launchSettings.json` definen `Depuracion=true` para que un servicio detenido en un punto de interrupción no se dé por caído: el Gateway carga `yarp.Depuracion.json` (sin health checks y con 10 min de espera por petición) y Asistente, Carrito y Pedidos alargan los timeouts de sus llamadas entre servicios (5 min por intento). Docker no usa esos perfiles, así que conserva los tiempos normales. Si se detiene mucho rato, el token de acceso (15 min) puede vencer.
+
 ### 4. Frontend
 
 ```bash

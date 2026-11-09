@@ -8,7 +8,8 @@
       { "Path": "Inventory_BACK\\Inventory_Api\\Inventory_Api.csproj", "Action": "Start", "DebugTarget": "http" },
       { "Path": "Cart_BACK\\Cart_Api\\Cart_Api.csproj", "Action": "Start", "DebugTarget": "http" },
       { "Path": "Orders_BACK\\Orders_Api\\Orders_Api.csproj", "Action": "Start", "DebugTarget": "http" },
-      { "Path": "Payments_BACK\\Payments_Api\\Payments_Api.csproj", "Action": "Start", "DebugTarget": "http" }
+      { "Path": "Payments_BACK\\Payments_Api\\Payments_Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "Assistant_BACK\\Assistant_Api\\Assistant_Api.csproj", "Action": "Start", "DebugTarget": "http" }
     ]
   },
   {

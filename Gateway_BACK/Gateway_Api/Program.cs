@@ -10,8 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
     .AddJsonFile("yarp.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"yarp.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-    .AddEnvironmentVariables();
+    .AddJsonFile($"yarp.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+
+// Depuración local (Depuracion=true en launchSettings.json): un servicio detenido en un punto de interrupción no
+// responde /health y el Gateway lo sacaría de la lista (503). yarp.Depuracion.json apaga los health checks y
+// alarga el tiempo de espera de cada petición. Docker no usa launchSettings, así que allí no aplica.
+if (builder.Configuration.GetValue<bool>("Depuracion"))
+    builder.Configuration.AddJsonFile("yarp.Depuracion.json", optional: false, reloadOnChange: true);
+
+builder.Configuration.AddEnvironmentVariables();
 
 string jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Falta configurar Jwt:Key.");

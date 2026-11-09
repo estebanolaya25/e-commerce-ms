@@ -215,6 +215,9 @@ services:
   chroma:
     image: chromadb/chroma:1.5.9
     container_name: chroma
+    # Publicado en el equipo para depurar el asistente desde Visual Studio (iniciar-local.ps1 o E-Commerce-ms.slnLaunch).
+    ports:
+      - "8000:8000"
     environment:
       ANONYMIZED_TELEMETRY: "FALSE"
     volumes:

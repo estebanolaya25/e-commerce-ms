@@ -8,7 +8,8 @@
       "launchUrl": "api/pedidos/swagger",
       "applicationUrl": "http://localhost:5105",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Depuracion": "true"
       }
     },
     "https": {
@@ -18,7 +19,8 @@
       "launchUrl": "api/pedidos/swagger",
       "applicationUrl": "https://localhost:7105;http://localhost:5105",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Depuracion": "true"
       }
     }
   }

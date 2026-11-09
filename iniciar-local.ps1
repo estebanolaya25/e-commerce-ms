@@ -17,12 +17,17 @@ $servicios = @(
 )
 
 # Si las APIs siguen corriendo en Docker, ocuparían el puerto 5100 y competirían por los mensajes de RabbitMQ.
-$enDocker = docker ps --filter "label=com.docker.compose.project=ecommerce" --format "{{.Names}}" 2>$null
+# ChromaDB no cuenta: es infraestructura del asistente y debe seguir en Docker.
+$enDocker = docker ps --filter "label=com.docker.compose.project=ecommerce" --format "{{.Names}}" 2>$null |
+    Where-Object { $_ -ne 'chroma' }
 if ($enDocker) {
     Write-Host "Las APIs siguen corriendo en Docker: $($enDocker -join ', ')" -ForegroundColor Yellow
-    Write-Host "Deténgalas primero con:  docker compose stop" -ForegroundColor Yellow
+    Write-Host "Deténgalas primero con:  docker compose stop $($enDocker -join ' ')" -ForegroundColor Yellow
     exit 1
 }
+
+# ChromaDB corre en Docker con el puerto 8000 publicado en el equipo.
+docker compose -f (Join-Path $raiz 'docker-compose.yml') up -d chroma 2>$null | Out-Null
 
 # El asistente necesita Ollama (:11434) y ChromaDB (:8000). Si faltan, arranca igual pero responde 502.
 foreach ($dependencia in @(@{ Nombre = 'Ollama'; Url = 'http://localhost:11434/api/tags' },
